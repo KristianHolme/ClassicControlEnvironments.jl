@@ -372,7 +372,7 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::PendulumEnv
     # Ensure there's a layout cell available or create one.
     # By default, fig from live_viz is a 1x1 grid for the axis.
     # We can add to fig[2,1]. Makie should handle expanding the layout.
-    display(fig)
+    # display(fig)
     sg = SliderGrid(fig[2, 1],
         (label="Step", range=1:num_steps, startvalue=1),
         (label="Playback Speed", range=0.01:0.01:0.5, startvalue=0.05)
