@@ -389,7 +389,7 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::ClassicCont
     _, _, _, fig, update_viz! = live_viz(problem_for_viz; size=(600, 600))
 
     # Add a slider for trajectory step
-    display(fig)
+    #display(fig)
     sg = SliderGrid(fig[2, 1],
         (label="Step", range=1:num_steps, startvalue=1),
         (label="Playback Speed", range=0.01:0.01:0.1, startvalue=0.05)
