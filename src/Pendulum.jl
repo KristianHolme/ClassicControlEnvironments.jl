@@ -4,7 +4,7 @@
     torque::Float32 = 0.0f0
     mass::Float32 = 1.0f0
     length::Float32 = 1.0f0
-    gravity::Float32 = 10f0
+    gravity::Float32 = 10.0f0
     dt::Float32 = 0.05f0
 end
 
@@ -15,14 +15,14 @@ mutable struct PendulumEnv <: AbstractEnv
     max_steps::Int
     step::Int
     rng::Random.AbstractRNG
-    function PendulumEnv(; problem=nothing, max_steps::Int=200, rng::Random.AbstractRNG=Random.Xoshiro(), kwargs...)
+    function PendulumEnv(; problem = nothing, max_steps::Int = 200, rng::Random.AbstractRNG = Random.Xoshiro(), kwargs...)
         # Create a problem if not provided, using kwargs for its constructor
         if isnothing(problem)
             problem = PendulumProblem(; kwargs...)
         end
 
         action_space = Box{Float32}([-2.0f0], [2.0f0])
-        observation_space = Box{Float32}([-1f0, -1f0, -8f0], [1f0, 1f0, 8f0])
+        observation_space = Box{Float32}([-1.0f0, -1.0f0, -8.0f0], [1.0f0, 1.0f0, 8.0f0])
         env = new(problem, action_space, observation_space, max_steps, 0, rng)
         return env
     end
@@ -32,13 +32,13 @@ function DRiL.reset!(env::PendulumEnv)
     # Use the environment's internal RNG
     reset!(env.problem, env.rng)
     env.step = 0
-    nothing
+    return nothing
 end
 
 function reset!(problem::PendulumProblem, rng::AbstractRNG)
-    problem.theta = rand(rng, Float32) * 2π - π  # [-π, π] 
-    problem.velocity = (rand(rng, Float32) * 2.0f0 - 1.0f0)  # [-1, 1] 
-    problem.torque = 0.0f0
+    problem.theta = rand(rng, Float32) * 2π - π  # [-π, π]
+    problem.velocity = (rand(rng, Float32) * 2.0f0 - 1.0f0)  # [-1, 1]
+    return problem.torque = 0.0f0
 end
 
 function pendulum_rewards(theta, velocity, torque)
@@ -53,8 +53,8 @@ function reward(env::PendulumEnv)
     return reward
 end
 
-function DRiL.act!(env::PendulumEnv, action::AbstractArray{Float32,1})
-    DRiL.act!(env, action[1])
+function DRiL.act!(env::PendulumEnv, action::AbstractArray{Float32, 1})
+    return DRiL.act!(env, action[1])
 end
 
 function DRiL.act!(env::PendulumEnv, action::Float32)

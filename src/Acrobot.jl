@@ -36,7 +36,7 @@ mutable struct AcrobotEnv <: AbstractEnv
     step::Int
     rng::Random.AbstractRNG
 
-    function AcrobotEnv(; problem=nothing, max_steps::Int=500, rng::Random.AbstractRNG=Random.Xoshiro(), kwargs...)
+    function AcrobotEnv(; problem = nothing, max_steps::Int = 500, rng::Random.AbstractRNG = Random.Xoshiro(), kwargs...)
         # Create a problem if not provided, using kwargs for its constructor
         if isnothing(problem)
             problem = AcrobotProblem(; kwargs...)
@@ -59,17 +59,17 @@ end
 function DRiL.reset!(env::AcrobotEnv)
     reset!(env.problem, env.rng)
     env.step = 0
-    nothing
+    return nothing
 end
 
-function reset!(problem::AcrobotProblem, rng::AbstractRNG; low::Float32=-0.1f0, high::Float32=0.1f0)
+function reset!(problem::AcrobotProblem, rng::AbstractRNG; low::Float32 = -0.1f0, high::Float32 = 0.1f0)
     # Initialize state uniformly in [low, high] for all 4 state variables
     problem.theta1 = rand(rng, Float32) * (high - low) + low
     problem.theta2 = rand(rng, Float32) * (high - low) + low
     problem.dtheta1 = rand(rng, Float32) * (high - low) + low
     problem.dtheta2 = rand(rng, Float32) * (high - low) + low
     problem.torque = 0.0f0
-    nothing
+    return nothing
 end
 
 function reward(env::AcrobotEnv)
@@ -117,11 +117,13 @@ function acrobot_dynamics!(problem::AcrobotProblem, s_augmented::Vector{Float32}
     d1 = m1 * lc1^2 + m2 * (l1^2 + lc2^2 + 2 * l1 * lc2 * cos(theta2)) + I1 + I2
     d2 = m2 * (lc2^2 + l1 * lc2 * cos(theta2)) + I2
     phi2 = m2 * lc2 * g * cos(theta1 + theta2 - Float32(π / 2))
-    phi1 = (-m2 * l1 * lc2 * dtheta2^2 * sin(theta2)
+    phi1 = (
+        -m2 * l1 * lc2 * dtheta2^2 * sin(theta2)
             -
             2 * m2 * l1 * lc2 * dtheta2 * dtheta1 * sin(theta2)
             + (m1 * lc1 + m2 * l1) * g * cos(theta1 - Float32(π / 2))
-            + phi2)
+            + phi2
+    )
 
     if problem.book_or_nips == "nips"
         # NIPS paper version
@@ -129,7 +131,7 @@ function acrobot_dynamics!(problem::AcrobotProblem, s_augmented::Vector{Float32}
     else
         # Book version (default)
         ddtheta2 = (a + d2 / d1 * phi1 - m2 * l1 * lc2 * dtheta1^2 * sin(theta2) - phi2) /
-                   (m2 * lc2^2 + I2 - d2^2 / d1)
+            (m2 * lc2^2 + I2 - d2^2 / d1)
     end
 
     ddtheta1 = -(d2 * ddtheta2 + phi1) / d1
@@ -149,15 +151,15 @@ function rk4_step(problem::AcrobotProblem, state::Vector{Float32}, dt::Float32)
     return new_state[1:4]  # Return only the state variables, not the torque
 end
 
-function DRiL.act!(env::AcrobotEnv, action::AbstractArray{Int,1})
-    DRiL.act!(env, action[1])
+function DRiL.act!(env::AcrobotEnv, action::AbstractArray{Int, 1})
+    return DRiL.act!(env, action[1])
 end
 
 function DRiL.act!(env::AcrobotEnv, action::Integer)
     problem = env.problem
 
     # Map discrete action to torque
-    torque = problem.avail_torque[action+1]  # Convert 0-based to 1-based indexing
+    torque = problem.avail_torque[action + 1]  # Convert 0-based to 1-based indexing
     problem.torque = torque
 
     # Current state
@@ -191,7 +193,7 @@ end
 DRiL.truncated(env::AcrobotEnv) = env.step >= env.max_steps
 DRiL.action_space(env::AcrobotEnv) = env.action_space
 DRiL.observation_space(env::AcrobotEnv) = env.observation_space
-DRiL.get_info(env::AcrobotEnv) = Dict{String,Any}(
+DRiL.get_info(env::AcrobotEnv) = Dict{String, Any}(
     "step" => env.step,
     "theta1" => env.problem.theta1,
     "theta2" => env.problem.theta2,

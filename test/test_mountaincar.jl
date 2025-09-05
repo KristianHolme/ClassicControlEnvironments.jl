@@ -8,9 +8,9 @@ using Random
     # Test both discrete and continuous versions
     discrete_env = MountainCarEnv()
     continuous_env = MountainCarContinuousEnv()
-    
+
     @testset "Common functionality for $(typeof(env))" for env in [discrete_env, continuous_env]
-        
+
         @testset "Observation range" begin
             reset!(env)
 
@@ -38,9 +38,9 @@ using Random
         @testset "Initial state" begin
             rng = MersenneTwister(456)
             if env isa MountainCarEnv
-                test_env = MountainCarEnv(rng=rng)
+                test_env = MountainCarEnv(rng = rng)
             else
-                test_env = MountainCarContinuousEnv(rng=rng)
+                test_env = MountainCarContinuousEnv(rng = rng)
             end
 
             # Test multiple resets
@@ -118,16 +118,16 @@ using Random
         @testset "Step count and truncation" begin
             max_steps = 50
             if env isa MountainCarEnv
-                test_env = MountainCarEnv(max_steps=max_steps)
+                test_env = MountainCarEnv(max_steps = max_steps)
             else
-                test_env = MountainCarContinuousEnv(max_steps=max_steps)
+                test_env = MountainCarContinuousEnv(max_steps = max_steps)
             end
             reset!(test_env)
 
             @test test_env.step == 0
             @test !truncated(test_env)
 
-            for i in 1:max_steps-1
+            for i in 1:(max_steps - 1)
                 if test_env isa MountainCarEnv  # Discrete
                     act!(test_env, 1)  # No force
                 else  # Continuous
@@ -164,18 +164,18 @@ using Random
 
         @testset "Action mapping" begin
             reset!(env)
-            
+
             # Test left action (0 -> -1 force)
             act!(env, 0)
             @test env.problem.force == -1.0f0
-            
+
             reset!(env)
             # Test no action (1 -> 0 force)
             act!(env, 1)
             @test env.problem.force == 0.0f0
-            
+
             reset!(env)
-            # Test right action (2 -> +1 force) 
+            # Test right action (2 -> +1 force)
             act!(env, 2)
             @test env.problem.force == 1.0f0
         end

@@ -19,7 +19,7 @@ function _process_actions_for_plotting(actions::AbstractArray, env::ClassicContr
     return force_actions
 end
 
-function _mountain_shape(x_range, amplitude=0.45)
+function _mountain_shape(x_range, amplitude = 0.45)
     # Create the mountain/valley shape: cos(3*x) scaled
     return sin.(3.0 .* x_range) .* amplitude .+ 0.55
     # return amplitude * cos.(3.0 * x_range)
@@ -42,36 +42,38 @@ function _force_arrow_coords(problem::MountainCarProblem)
 
     color = :darkorange
 
-    (; car_pos, dx, dy, color, force)
+    return (; car_pos, dx, dy, color, force)
 end
 
 function ClassicControlEnvironments.plot(problem::MountainCarProblem)
-    fig = Figure(size=(600, 400))
-    ax = Axis(fig[1, 1], aspect=DataAspect())
+    fig = Figure(size = (600, 400))
+    ax = Axis(fig[1, 1], aspect = DataAspect())
 
     # Draw mountain landscape
-    x_range = range(problem.min_position, problem.max_position, length=200)
+    x_range = range(problem.min_position, problem.max_position, length = 200)
     y_range = _mountain_shape(x_range)
-    lines!(ax, x_range, y_range, linewidth=3, color=:brown)
+    lines!(ax, x_range, y_range, linewidth = 3, color = :brown)
 
     # Fill area below mountain
-    band!(ax, x_range, fill(0.0, length(x_range)), y_range, color=(:brown, 0.3))
+    band!(ax, x_range, fill(0.0, length(x_range)), y_range, color = (:brown, 0.3))
 
     # Draw goal flag
     goal_x = problem.goal_position
     goal_y = sin(3.0 * goal_x) * 0.45 + 0.55
-    lines!(ax, [goal_x, goal_x], [goal_y, goal_y + 0.2], linewidth=4, color=:red)
-    scatter!(ax, [goal_x + 0.05], [goal_y + 0.15], marker=:rect, markersize=15, color=:red)
+    lines!(ax, [goal_x, goal_x], [goal_y, goal_y + 0.2], linewidth = 4, color = :red)
+    scatter!(ax, [goal_x + 0.05], [goal_y + 0.15], marker = :rect, markersize = 15, color = :red)
 
     # Draw car
     car_pos = _car_position(problem)
-    scatter!(ax, car_pos, marker=:rect, markersize=20, color=:blue)
+    scatter!(ax, car_pos, marker = :rect, markersize = 20, color = :blue)
 
     # Draw force arrow if there's significant force
-    if abs(problem.force) > 1e-3
+    if abs(problem.force) > 1.0e-3
         arrow_data = _force_arrow_coords(problem)
-        arrows2d!(ax, [arrow_data.car_pos], [Vec2f(arrow_data.dx, arrow_data.dy)],
-            color=arrow_data.color, shaftwidth=0.05)
+        arrows2d!(
+            ax, [arrow_data.car_pos], [Vec2f(arrow_data.dx, arrow_data.dy)],
+            color = arrow_data.color, shaftwidth = 0.05
+        )
     end
 
     # Labels and formatting
@@ -82,40 +84,43 @@ function ClassicControlEnvironments.plot(problem::MountainCarProblem)
     xlims!(ax, problem.min_position - 0.1, problem.max_position + 0.1)
     ylims!(ax, 0.0, 1.3)
 
-    fig
+    return fig
 end
 
-function ClassicControlEnvironments.live_viz(problem::MountainCarProblem; size=(600, 400))
+function ClassicControlEnvironments.live_viz(problem::MountainCarProblem; size = (600, 400))
     position = Observable(problem.position)
     velocity = Observable(problem.velocity)
     force = Observable(problem.force)
 
-    fig = Figure(size=size)
-    ax = Axis(fig[1, 1], aspect=DataAspect())
+    fig = Figure(size = size)
+    ax = Axis(fig[1, 1], aspect = DataAspect())
 
     # Draw mountain landscape (static)
-    x_range = range(problem.min_position, problem.max_position, length=200)
+    x_range = range(problem.min_position, problem.max_position, length = 200)
     y_range = _mountain_shape(x_range)
-    lines!(ax, x_range, y_range, linewidth=3, color=:brown)
-    band!(ax, x_range, fill(0.0, length(x_range)), y_range, color=(:brown, 0.3))
+    lines!(ax, x_range, y_range, linewidth = 3, color = :brown)
+    band!(ax, x_range, fill(0.0, length(x_range)), y_range, color = (:brown, 0.3))
 
     # Draw goal flag (static)
     goal_x = problem.goal_position
     goal_y = sin(3.0 * goal_x) * 0.45 + 0.55
-    lines!(ax, [goal_x, goal_x], [goal_y, goal_y + 0.2], linewidth=4, color=:red)
-    scatter!(ax, [goal_x + 0.05], [goal_y + 0.15], marker=:rect, markersize=15, color=:red)
+    lines!(ax, [goal_x, goal_x], [goal_y, goal_y + 0.2], linewidth = 4, color = :red)
+    scatter!(ax, [goal_x + 0.05], [goal_y + 0.15], marker = :rect, markersize = 15, color = :red)
 
     # Draw car (dynamic)
-    car_scatter = scatter!(ax, @lift(Point2f($position, sin(3.0 * $position) * 0.45 + 0.6)),
-        marker=:rect, markersize=20, color=:blue)
+    car_scatter = scatter!(
+        ax, @lift(Point2f($position, sin(3.0 * $position) * 0.45 + 0.6)),
+        marker = :rect, markersize = 20, color = :blue
+    )
 
     # Draw force arrow (dynamic)
-    force_arrow = arrows2d!(ax,
+    force_arrow = arrows2d!(
+        ax,
         @lift([Point2f($position, sin(3.0 * $position) * 0.45 + 0.6)]),
         @lift([Vec2f(0.2 * abs($force) * sign($force), 0.0)]),
-        color=:darkorange,
-        shaftwidth=0.015,
-        visible=@lift(abs($force) > 1e-3)
+        color = :darkorange,
+        shaftwidth = 0.015,
+        visible = @lift(abs($force) > 1.0e-3)
     )
 
     # Labels and formatting
@@ -144,32 +149,35 @@ function ClassicControlEnvironments.interactive_viz(env::ClassicControlEnvironme
     min_rew = Observable(ClassicControlEnvironments.reward(env))
     auto_running = Observable(false)
 
-    fig = Figure(size=(700, 600))
-    ax = Axis(fig[1, 1], aspect=DataAspect())
+    fig = Figure(size = (700, 600))
+    ax = Axis(fig[1, 1], aspect = DataAspect())
 
     # Draw mountain landscape
-    x_range = range(env.problem.min_position, env.problem.max_position, length=200)
+    x_range = range(env.problem.min_position, env.problem.max_position, length = 200)
     y_range = _mountain_shape(x_range)
-    lines!(ax, x_range, y_range, linewidth=3, color=:brown)
-    band!(ax, x_range, fill(0.0, length(x_range)), y_range, color=(:brown, 0.3))
+    lines!(ax, x_range, y_range, linewidth = 3, color = :brown)
+    band!(ax, x_range, fill(0.0, length(x_range)), y_range, color = (:brown, 0.3))
 
     # Goal flag
     goal_x = env.problem.goal_position
     goal_y = sin(3.0 * goal_x) * 0.45 + 0.55
-    lines!(ax, [goal_x, goal_x], [goal_y, goal_y + 0.2], linewidth=4, color=:red)
-    scatter!(ax, [goal_x + 0.05], [goal_y + 0.15], marker=:rect, markersize=15, color=:red)
+    lines!(ax, [goal_x, goal_x], [goal_y, goal_y + 0.2], linewidth = 4, color = :red)
+    scatter!(ax, [goal_x + 0.05], [goal_y + 0.15], marker = :rect, markersize = 15, color = :red)
 
     # Car
-    car_scatter = scatter!(ax, @lift(Point2f($position, sin(3.0 * $position) * 0.45 + 0.6)),
-        marker=:rect, markersize=20, color=:blue)
+    car_scatter = scatter!(
+        ax, @lift(Point2f($position, sin(3.0 * $position) * 0.45 + 0.6)),
+        marker = :rect, markersize = 20, color = :blue
+    )
 
     # Force arrow
-    force_arrow = arrows2d!(ax,
+    force_arrow = arrows2d!(
+        ax,
         @lift([Point2f($position, sin(3.0 * $position) * 0.45 + 0.6)]),
         @lift([Vec2f(0.2 * abs($force) * sign($force), 0.0)]),
-        color=:darkorange,
-        shaftwidth=0.015,
-        visible=@lift(abs($force) > 1e-3)
+        color = :darkorange,
+        shaftwidth = 0.015,
+        visible = @lift(abs($force) > 1.0e-3)
     )
 
     ax.xlabel = "Position"
@@ -179,7 +187,7 @@ function ClassicControlEnvironments.interactive_viz(env::ClassicControlEnvironme
     ylims!(ax, 0.0, 1.3)
 
     # Reward display
-    rew_ax = Axis(fig[1, 2], title="Reward", limits=@lift((nothing, ($min_rew, 100))))
+    rew_ax = Axis(fig[1, 2], title = "Reward", limits = @lift((nothing, ($min_rew, 100))))
     rew_bar = barplot!(rew_ax, 1, rew)
     colsize!(fig.layout, 2, Relative(0.25))
 
@@ -187,27 +195,29 @@ function ClassicControlEnvironments.interactive_viz(env::ClassicControlEnvironme
     is_discrete = DRiL.action_space(env) isa DRiL.Discrete
     if is_discrete
         # Discrete: slider with 3 values corresponding to forces -1, 0, 1
-        sg = SliderGrid(fig[2, 1],
-            (label="Force", range=[-1.0, 0.0, 1.0], startvalue=0.0),
-            width=Relative(0.9)
+        sg = SliderGrid(
+            fig[2, 1],
+            (label = "Force", range = [-1.0, 0.0, 1.0], startvalue = 0.0),
+            width = Relative(0.9)
         )
     else
         # Continuous: full range slider
-        sg = SliderGrid(fig[2, 1],
-            (label="Force", range=-1.0:0.01:1.0, startvalue=0.0),
-            width=Relative(0.9)
+        sg = SliderGrid(
+            fig[2, 1],
+            (label = "Force", range = -1.0:0.01:1.0, startvalue = 0.0),
+            width = Relative(0.9)
         )
     end
     force_slider = sg.sliders[1]
 
     # Control buttons
     button_grid = GridLayout(fig[3, 1])
-    start_button = Button(button_grid[1, 1], label="Start Auto", tellwidth=false)
-    stop_button = Button(button_grid[1, 2], label="Stop Auto", tellwidth=false)
-    step_button = Button(button_grid[1, 3], label="Single Step", tellwidth=false)
-    reset_button = Button(button_grid[1, 4], label="Reset", tellwidth=false)
+    start_button = Button(button_grid[1, 1], label = "Start Auto", tellwidth = false)
+    stop_button = Button(button_grid[1, 2], label = "Stop Auto", tellwidth = false)
+    step_button = Button(button_grid[1, 3], label = "Single Step", tellwidth = false)
+    reset_button = Button(button_grid[1, 4], label = "Reset", tellwidth = false)
 
-    current_task = Ref{Union{Task,Nothing}}(nothing)
+    current_task = Ref{Union{Task, Nothing}}(nothing)
 
     # Helper function to convert force to action
     function force_to_action(force_val)
@@ -307,7 +317,7 @@ function ClassicControlEnvironments.interactive_viz(env::ClassicControlEnvironme
 end
 
 function ClassicControlEnvironments.plot_trajectory(env::ClassicControlEnvironments.AbstractMountainCarEnv, observations::AbstractArray, actions::AbstractArray, rewards::AbstractArray)
-    fig = Figure(size=(800, 800))
+    fig = Figure(size = (800, 800))
     n = length(observations)
 
     positions = getindex.(observations, 1)
@@ -317,41 +327,41 @@ function ClassicControlEnvironments.plot_trajectory(env::ClassicControlEnvironme
     actions = _process_actions_for_plotting(actions, env)
 
     # Position plot
-    ax_pos = Axis(fig[1, 1], title="Position over Time")
-    pos_line = scatterlines!(ax_pos, positions, label="Position")
-    hlines!(ax_pos, [env.problem.goal_position], color=:red, linestyle=:dash, label="Goal")
-    hlines!(ax_pos, [env.problem.min_position, env.problem.max_position], color=:gray, linestyle=:dot, label="Bounds")
+    ax_pos = Axis(fig[1, 1], title = "Position over Time")
+    pos_line = scatterlines!(ax_pos, positions, label = "Position")
+    hlines!(ax_pos, [env.problem.goal_position], color = :red, linestyle = :dash, label = "Goal")
+    hlines!(ax_pos, [env.problem.min_position, env.problem.max_position], color = :gray, linestyle = :dot, label = "Bounds")
 
     # Velocity plot
-    ax_vel = Axis(fig[1, 2], title="Velocity over Time")
-    vel_line = scatterlines!(ax_vel, velocities, label="Velocity")
-    hlines!(ax_vel, [-env.problem.max_speed, env.problem.max_speed], color=:gray, linestyle=:dot, label="Max Speed")
+    ax_vel = Axis(fig[1, 2], title = "Velocity over Time")
+    vel_line = scatterlines!(ax_vel, velocities, label = "Velocity")
+    hlines!(ax_vel, [-env.problem.max_speed, env.problem.max_speed], color = :gray, linestyle = :dot, label = "Max Speed")
 
     # Action plot
-    ax_action = Axis(fig[2, 1], title="Actions (Force)")
-    action_line = scatterlines!(ax_action, actions, label="Force")
-    hlines!(ax_action, [-1.0, 1.0], color=:gray, linestyle=:dot, label="Action Bounds")
+    ax_action = Axis(fig[2, 1], title = "Actions (Force)")
+    action_line = scatterlines!(ax_action, actions, label = "Force")
+    hlines!(ax_action, [-1.0, 1.0], color = :gray, linestyle = :dot, label = "Action Bounds")
 
     # Reward plot (shifted to align with resulting observations)
-    ax_rew = Axis(fig[2, 2], title="Rewards")
+    ax_rew = Axis(fig[2, 2], title = "Rewards")
     # Pad rewards with NaN for the first observation (no preceding action)
     shifted_rewards = [NaN; rewards]
-    rew_line = scatterlines!(ax_rew, shifted_rewards, label="Reward")
+    rew_line = scatterlines!(ax_rew, shifted_rewards, label = "Reward")
 
     # Trajectory in 2D space (position vs velocity)
-    ax_traj = Axis(fig[3, 1:2], title="Trajectory (Position vs Velocity)")
-    traj_line = scatterlines!(ax_traj, positions, velocities, label="Trajectory")
-    scatter!(ax_traj, [positions[1]], [velocities[1]], color=:green, markersize=10, label="Start")
-    scatter!(ax_traj, [positions[end]], [velocities[end]], color=:red, markersize=10, label="End")
-    vlines!(ax_traj, [env.problem.goal_position], color=:red, linestyle=:dash, label="Goal Position")
+    ax_traj = Axis(fig[3, 1:2], title = "Trajectory (Position vs Velocity)")
+    traj_line = scatterlines!(ax_traj, positions, velocities, label = "Trajectory")
+    scatter!(ax_traj, [positions[1]], [velocities[1]], color = :green, markersize = 10, label = "Start")
+    scatter!(ax_traj, [positions[end]], [velocities[end]], color = :red, markersize = 10, label = "End")
+    vlines!(ax_traj, [env.problem.goal_position], color = :red, linestyle = :dash, label = "Goal Position")
     # Add position and velocity limits
-    vlines!(ax_traj, [env.problem.min_position, env.problem.max_position], color=:gray, linestyle=:dot, label="Position Bounds")
-    hlines!(ax_traj, [-env.problem.max_speed, env.problem.max_speed], color=:gray, linestyle=:dot, label="Velocity Bounds")
+    vlines!(ax_traj, [env.problem.min_position, env.problem.max_position], color = :gray, linestyle = :dot, label = "Position Bounds")
+    hlines!(ax_traj, [-env.problem.max_speed, env.problem.max_speed], color = :gray, linestyle = :dot, label = "Velocity Bounds")
     ax_traj.xlabel = "Position"
     ax_traj.ylabel = "Velocity"
-    fig[4, 1:2] = Legend(fig, ax_traj, orientation=:horizontal)
+    fig[4, 1:2] = Legend(fig, ax_traj, orientation = :horizontal)
 
-    fig
+    return fig
 end
 
 function ClassicControlEnvironments.plot_trajectory_interactive(env::ClassicControlEnvironments.AbstractMountainCarEnv, observations::AbstractArray, actions::AbstractArray, rewards::AbstractArray)
@@ -374,39 +384,40 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::ClassicCont
 
     # Create a MountainCarProblem instance for the initial visualization
     problem_for_viz = MountainCarProblem(
-        position=Float32(initial_position),
-        velocity=Float32(initial_velocity),
-        force=Float32(initial_force),
-        min_position=env.problem.min_position,
-        max_position=env.problem.max_position,
-        max_speed=env.problem.max_speed,
-        goal_position=env.problem.goal_position,
-        goal_velocity=env.problem.goal_velocity,
-        gravity=env.problem.gravity
+        position = Float32(initial_position),
+        velocity = Float32(initial_velocity),
+        force = Float32(initial_force),
+        min_position = env.problem.min_position,
+        max_position = env.problem.max_position,
+        max_speed = env.problem.max_speed,
+        goal_position = env.problem.goal_position,
+        goal_velocity = env.problem.goal_velocity,
+        gravity = env.problem.gravity
     )
 
     # Get the live visualization components from live_viz
-    _, _, _, fig, update_viz! = live_viz(problem_for_viz; size=(600, 600))
+    _, _, _, fig, update_viz! = live_viz(problem_for_viz; size = (600, 600))
 
     # Add a slider for trajectory step
     #display(fig)
-    sg = SliderGrid(fig[2, 1],
-        (label="Step", range=1:num_steps, startvalue=1),
-        (label="Playback Speed", range=0.01:0.01:0.1, startvalue=0.05)
+    sg = SliderGrid(
+        fig[2, 1],
+        (label = "Step", range = 1:num_steps, startvalue = 1),
+        (label = "Playback Speed", range = 0.01:0.01:0.1, startvalue = 0.05)
     )
     trajectory_slider = sg.sliders[1]
     speed_slider = sg.sliders[2]
 
     # Control buttons for automatic trajectory playback
     button_grid = GridLayout(fig[3, 1])
-    start_button = Button(button_grid[1, 1], label="Play", tellwidth=false)
-    stop_button = Button(button_grid[1, 2], label="Pause", tellwidth=false)
-    step_button = Button(button_grid[1, 3], label="Next Step", tellwidth=false)
-    reset_button = Button(button_grid[1, 4], label="Reset", tellwidth=false)
+    start_button = Button(button_grid[1, 1], label = "Play", tellwidth = false)
+    stop_button = Button(button_grid[1, 2], label = "Pause", tellwidth = false)
+    step_button = Button(button_grid[1, 3], label = "Next Step", tellwidth = false)
+    reset_button = Button(button_grid[1, 4], label = "Reset", tellwidth = false)
 
     # Button states
     auto_playing = Observable(false)
-    current_task = Ref{Union{Task,Nothing}}(nothing)
+    current_task = Ref{Union{Task, Nothing}}(nothing)
 
     # Function to update visualization for a given step
     function update_step!(step_idx)
@@ -417,17 +428,17 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::ClassicCont
         current_force = step_idx <= length(processed_actions) ? processed_actions[step_idx] : 0.0f0
 
         updated_problem = MountainCarProblem(
-            position=Float32(current_position),
-            velocity=Float32(current_velocity),
-            force=Float32(current_force),
-            min_position=env.problem.min_position,
-            max_position=env.problem.max_position,
-            max_speed=env.problem.max_speed,
-            goal_position=env.problem.goal_position,
-            goal_velocity=env.problem.goal_velocity,
-            gravity=env.problem.gravity
+            position = Float32(current_position),
+            velocity = Float32(current_velocity),
+            force = Float32(current_force),
+            min_position = env.problem.min_position,
+            max_position = env.problem.max_position,
+            max_speed = env.problem.max_speed,
+            goal_position = env.problem.goal_position,
+            goal_velocity = env.problem.goal_velocity,
+            gravity = env.problem.gravity
         )
-        update_viz!(updated_problem)
+        return update_viz!(updated_problem)
     end
 
     # Manual slider control
@@ -509,12 +520,13 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::ClassicCont
     return fig, trajectory_slider, start_button, stop_button, step_button, reset_button
 end
 
-function ClassicControlEnvironments.animate_trajectory_video(env::ClassicControlEnvironments.AbstractMountainCarEnv,
-    observations::AbstractArray,
-    actions::AbstractArray,
-    output_filename::AbstractString;
-    target_fps::Int=25
-)
+function ClassicControlEnvironments.animate_trajectory_video(
+        env::ClassicControlEnvironments.AbstractMountainCarEnv,
+        observations::AbstractArray,
+        actions::AbstractArray,
+        output_filename::AbstractString;
+        target_fps::Int = 25
+    )
     # Process actions (handles both discrete and continuous)
     actions = _process_actions_for_plotting(actions, env)
     num_steps = length(observations)
@@ -547,17 +559,17 @@ function ClassicControlEnvironments.animate_trajectory_video(env::ClassicControl
         current_force = step_idx <= length(actions) ? actions[step_idx] : 0.0f0
 
         updated_problem = MountainCarProblem(
-            position=Float32(current_position),
-            velocity=Float32(current_velocity),
-            force=Float32(current_force),
-            min_position=env.problem.min_position,
-            max_position=env.problem.max_position,
-            max_speed=env.problem.max_speed,
-            goal_position=env.problem.goal_position,
-            goal_velocity=env.problem.goal_velocity,
-            gravity=env.problem.gravity
+            position = Float32(current_position),
+            velocity = Float32(current_velocity),
+            force = Float32(current_force),
+            min_position = env.problem.min_position,
+            max_position = env.problem.max_position,
+            max_speed = env.problem.max_speed,
+            goal_position = env.problem.goal_position,
+            goal_velocity = env.problem.goal_velocity,
+            gravity = env.problem.gravity
         )
-        update_viz!(updated_problem)
+        return update_viz!(updated_problem)
     end
 
     # Use dt=1 for MountainCar (no dt field) to set frame dropping for real-time video
@@ -565,39 +577,39 @@ function ClassicControlEnvironments.animate_trajectory_video(env::ClassicControl
     steps_per_frame = max(1, round(Int, 1 / (target_fps * dt)))
     frame_indices = 1:steps_per_frame:num_steps
 
-    Makie.record(fig, output_filename, frame_indices; framerate=target_fps) do step_idx
+    Makie.record(fig, output_filename, frame_indices; framerate = target_fps) do step_idx
         frame_update(step_idx)
     end
 
     return output_filename
 end
 
-function ClassicControlEnvironments.plot_trajectory_phase_space(env::ClassicControlEnvironments.AbstractMountainCarEnv, observations::AbstractArray, actions::AbstractArray; size=(600, 400))
+function ClassicControlEnvironments.plot_trajectory_phase_space(env::ClassicControlEnvironments.AbstractMountainCarEnv, observations::AbstractArray, actions::AbstractArray; size = (600, 400))
     positions = getindex.(observations, 1)
     velocities = getindex.(observations, 2)
 
-    fig = Figure(size=size)
-    ax = Axis(fig[1, 1], title="Trajectory (Position vs Velocity)")
+    fig = Figure(size = size)
+    ax = Axis(fig[1, 1], title = "Trajectory (Position vs Velocity)")
 
     # Main trajectory line
-    traj_line = scatterlines!(ax, positions, velocities, label="Trajectory")
+    traj_line = scatterlines!(ax, positions, velocities, label = "Trajectory")
 
     # Start and end points
-    scatter!(ax, [positions[1]], [velocities[1]], color=:green, markersize=10, label="Start")
-    scatter!(ax, [positions[end]], [velocities[end]], color=:red, markersize=10, label="End")
+    scatter!(ax, [positions[1]], [velocities[1]], color = :green, markersize = 10, label = "Start")
+    scatter!(ax, [positions[end]], [velocities[end]], color = :red, markersize = 10, label = "End")
 
     # Goal position line
-    vlines!(ax, [env.problem.goal_position], color=:red, linestyle=:dash, label="Goal Position")
+    vlines!(ax, [env.problem.goal_position], color = :red, linestyle = :dash, label = "Goal Position")
 
     # Position and velocity limits
-    vlines!(ax, [env.problem.min_position, env.problem.max_position], color=:gray, linestyle=:dot, label="Position Bounds")
-    hlines!(ax, [-env.problem.max_speed, env.problem.max_speed], color=:gray, linestyle=:dot, label="Velocity Bounds")
+    vlines!(ax, [env.problem.min_position, env.problem.max_position], color = :gray, linestyle = :dot, label = "Position Bounds")
+    hlines!(ax, [-env.problem.max_speed, env.problem.max_speed], color = :gray, linestyle = :dot, label = "Velocity Bounds")
 
     ax.xlabel = "Position"
     ax.ylabel = "Velocity"
 
     # Add legend below the plot
-    fig[2, 1] = Legend(fig, ax, orientation=:horizontal, tellheight=true)
+    fig[2, 1] = Legend(fig, ax, orientation = :horizontal, tellheight = true)
 
     return fig
 end

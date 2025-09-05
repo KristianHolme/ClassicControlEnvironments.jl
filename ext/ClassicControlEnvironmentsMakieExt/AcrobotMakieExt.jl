@@ -44,7 +44,7 @@ function _torque_arc_coords(problem::AcrobotProblem)
     joint1, joint2, _ = _link_positions(problem)
 
     torque = problem.torque
-    if abs(torque) < 1e-3
+    if abs(torque) < 1.0e-3
         return nothing
     end
 
@@ -78,40 +78,46 @@ function _torque_arc_coords(problem::AcrobotProblem)
 
     color = torque > 0 ? :green : :red
 
-    return (; center=joint2, radius=arc_radius, start_angle=start_angle, stop_angle=stop_angle,
-        arrow_pos=arrow_head_pos, dx=dx, dy=dy, color=color, torque=torque)
+    return (;
+        center = joint2, radius = arc_radius, start_angle = start_angle, stop_angle = stop_angle,
+        arrow_pos = arrow_head_pos, dx = dx, dy = dy, color = color, torque = torque,
+    )
 end
 
 function ClassicControlEnvironments.plot(problem::AcrobotProblem)
-    fig = Figure(size=(600, 600))
-    ax = Axis(fig[1, 1], aspect=DataAspect())
+    fig = Figure(size = (600, 600))
+    ax = Axis(fig[1, 1], aspect = DataAspect())
 
     # Calculate link positions
     joint1, joint2, tip = _link_positions(problem)
 
     # Draw the links
-    lines!(ax, [joint1, joint2], linewidth=8, color=:blue, label="Link 1")
-    lines!(ax, [joint2, tip], linewidth=8, color=:blue, label="Link 2")
+    lines!(ax, [joint1, joint2], linewidth = 8, color = :blue, label = "Link 1")
+    lines!(ax, [joint2, tip], linewidth = 8, color = :blue, label = "Link 2")
 
     # Draw joints
-    scatter!(ax, [joint1], markersize=15, color=:black, label="Base Joint")
-    scatter!(ax, [joint2], markersize=12, color=:orange, label="Actuated Joint")
-    scatter!(ax, [tip], markersize=10, color=:red, label="Tip")
+    scatter!(ax, [joint1], markersize = 15, color = :black, label = "Base Joint")
+    scatter!(ax, [joint2], markersize = 12, color = :orange, label = "Actuated Joint")
+    scatter!(ax, [tip], markersize = 10, color = :red, label = "Tip")
 
     # Draw goal line
     goal_line = _goal_height_line(problem)
-    lines!(ax, goal_line, linewidth=3, color=:green, linestyle=:dash, label="Goal Height")
+    lines!(ax, goal_line, linewidth = 3, color = :green, linestyle = :dash, label = "Goal Height")
 
     # Draw torque arc and arrow if there's significant torque
     torque_data = _torque_arc_coords(problem)
     if !isnothing(torque_data)
         # Draw the arc
-        arc!(ax, torque_data.center, torque_data.radius, torque_data.start_angle, torque_data.stop_angle,
-            color=torque_data.color, linewidth=3)
+        arc!(
+            ax, torque_data.center, torque_data.radius, torque_data.start_angle, torque_data.stop_angle,
+            color = torque_data.color, linewidth = 3
+        )
         # Draw the arrow head
-        arrows2d!(ax, [torque_data.arrow_pos], [Vec2f(torque_data.dx, torque_data.dy)],
-            color=torque_data.color, shaftwidth=6, shaftlength=0,
-            minshaftlength=0, tiplength=15, tipwidth=15)
+        arrows2d!(
+            ax, [torque_data.arrow_pos], [Vec2f(torque_data.dx, torque_data.dy)],
+            color = torque_data.color, shaftwidth = 6, shaftlength = 0,
+            minshaftlength = 0, tiplength = 15, tipwidth = 15
+        )
     end
 
     # Set axis properties
@@ -127,16 +133,16 @@ function ClassicControlEnvironments.plot(problem::AcrobotProblem)
     # Add legend
     # axislegend(ax, position=:rt)
 
-    fig
+    return fig
 end
 
-function ClassicControlEnvironments.live_viz(problem::AcrobotProblem; size=(600, 600))
+function ClassicControlEnvironments.live_viz(problem::AcrobotProblem; size = (600, 600))
     theta1 = Observable(problem.theta1)
     theta2 = Observable(problem.theta2)
     torque = Observable(problem.torque)
 
-    fig = Figure(size=size)
-    ax = Axis(fig[1, 1], aspect=DataAspect())
+    fig = Figure(size = size)
+    ax = Axis(fig[1, 1], aspect = DataAspect())
 
     # Dynamic link positions
     joint1 = Observable(Point2f(0, 0))
@@ -157,78 +163,94 @@ function ClassicControlEnvironments.live_viz(problem::AcrobotProblem; size=(600,
     end
 
     # Draw links (dynamic)
-    link1_line = lines!(ax, @lift([$joint1, $joint2]), linewidth=8, color=:blue)
-    link2_line = lines!(ax, @lift([$joint2, $tip]), linewidth=8, color=:blue)
+    link1_line = lines!(ax, @lift([$joint1, $joint2]), linewidth = 8, color = :blue)
+    link2_line = lines!(ax, @lift([$joint2, $tip]), linewidth = 8, color = :blue)
 
     # Draw joints (dynamic)
-    joint1_scatter = scatter!(ax, joint1, markersize=15, color=:black)
-    joint2_scatter = scatter!(ax, joint2, markersize=12, color=:orange)
-    tip_scatter = scatter!(ax, tip, markersize=10, color=:red)
+    joint1_scatter = scatter!(ax, joint1, markersize = 15, color = :black)
+    joint2_scatter = scatter!(ax, joint2, markersize = 12, color = :orange)
+    tip_scatter = scatter!(ax, tip, markersize = 10, color = :red)
 
     # Draw goal line (static)
     goal_line = _goal_height_line(problem)
-    lines!(ax, goal_line, linewidth=3, color=:green, linestyle=:dash)
+    lines!(ax, goal_line, linewidth = 3, color = :green, linestyle = :dash)
 
     # Draw torque arc and arrow (dynamic)
-    torque_arc = arc!(ax,
+    torque_arc = arc!(
+        ax,
         joint2,
-        @lift(begin
-            t = $torque
-            abs(t) < 1e-3 ? 0.15f0 : 0.15f0 + 0.1f0 * abs(t)
-        end),
-        @lift(begin
-            t = $torque
-            if abs(t) < 1e-3
-                0.0f0
-            else
-                arc_span = π / 3 + π / 6 * abs(t)
-                t > 0 ? -arc_span / 2 : arc_span / 2
+        @lift(
+            begin
+                t = $torque
+                abs(t) < 1.0e-3 ? 0.15f0 : 0.15f0 + 0.1f0 * abs(t)
             end
-        end),
-        @lift(begin
-            t = $torque
-            if abs(t) < 1e-3
-                0.0f0
-            else
-                arc_span = π / 3 + π / 6 * abs(t)
-                t > 0 ? arc_span / 2 : -arc_span / 2
+        ),
+        @lift(
+            begin
+                t = $torque
+                if abs(t) < 1.0e-3
+                    0.0f0
+                else
+                    arc_span = π / 3 + π / 6 * abs(t)
+                    t > 0 ? -arc_span / 2 : arc_span / 2
+                end
             end
-        end),
-        color=@lift($torque > 0 ? :green : :red),
-        linewidth=3,
-        visible=@lift(abs($torque) > 1e-3)
+        ),
+        @lift(
+            begin
+                t = $torque
+                if abs(t) < 1.0e-3
+                    0.0f0
+                else
+                    arc_span = π / 3 + π / 6 * abs(t)
+                    t > 0 ? arc_span / 2 : -arc_span / 2
+                end
+            end
+        ),
+        color = @lift($torque > 0 ? :green : :red),
+        linewidth = 3,
+        visible = @lift(abs($torque) > 1.0e-3)
     )
 
-    torque_arrow = arrows2d!(ax,
-        @lift(begin
-            t = $torque
-            if abs(t) < 1e-3
-                [Point2f(0, 0)]
-            else
-                arc_radius = 0.15f0 + 0.1f0 * abs(t)
-                arc_span = π / 3 + π / 6 * abs(t)
-                stop_angle = t > 0 ? arc_span / 2 : -arc_span / 2
-                [Point2f($joint2[1] + arc_radius * cos(stop_angle),
-                    $joint2[2] + arc_radius * sin(stop_angle))]
+    torque_arrow = arrows2d!(
+        ax,
+        @lift(
+            begin
+                t = $torque
+                if abs(t) < 1.0e-3
+                    [Point2f(0, 0)]
+                else
+                    arc_radius = 0.15f0 + 0.1f0 * abs(t)
+                    arc_span = π / 3 + π / 6 * abs(t)
+                    stop_angle = t > 0 ? arc_span / 2 : -arc_span / 2
+                    [
+                        Point2f(
+                            $joint2[1] + arc_radius * cos(stop_angle),
+                            $joint2[2] + arc_radius * sin(stop_angle)
+                        ),
+                    ]
+                end
             end
-        end),
-        @lift(begin
-            t = $torque
-            if abs(t) < 1e-3
-                [Vec2f(0, 0)]
-            else
-                arc_span = π / 3 + π / 6 * abs(t)
-                stop_angle = t > 0 ? arc_span / 2 : -arc_span / 2
-                arrow_angle = t > 0 ? stop_angle + π / 2 : stop_angle - π / 2
-                head_length = 0.15f0
-                [Vec2f(head_length * cos(arrow_angle), head_length * sin(arrow_angle))]
+        ),
+        @lift(
+            begin
+                t = $torque
+                if abs(t) < 1.0e-3
+                    [Vec2f(0, 0)]
+                else
+                    arc_span = π / 3 + π / 6 * abs(t)
+                    stop_angle = t > 0 ? arc_span / 2 : -arc_span / 2
+                    arrow_angle = t > 0 ? stop_angle + π / 2 : stop_angle - π / 2
+                    head_length = 0.15f0
+                    [Vec2f(head_length * cos(arrow_angle), head_length * sin(arrow_angle))]
+                end
             end
-        end),
-        color=@lift($torque > 0 ? :green : :red),
-        shaftwidth=0.01,
-        tiplength=15,
-        tipwidth=15,
-        visible=@lift(abs($torque) > 1e-3)
+        ),
+        color = @lift($torque > 0 ? :green : :red),
+        shaftwidth = 0.01,
+        tiplength = 15,
+        tipwidth = 15,
+        visible = @lift(abs($torque) > 1.0e-3)
     )
 
     # Set axis properties
@@ -259,8 +281,8 @@ function ClassicControlEnvironments.interactive_viz(env::AcrobotEnv)
     total_rew = Observable(0.0f0)
     auto_running = Observable(false)
 
-    fig = Figure(size=(800, 700))
-    ax = Axis(fig[1, 1], aspect=DataAspect())
+    fig = Figure(size = (800, 700))
+    ax = Axis(fig[1, 1], aspect = DataAspect())
 
     # Dynamic link positions
     joint1 = Observable(Point2f(0, 0))
@@ -281,78 +303,94 @@ function ClassicControlEnvironments.interactive_viz(env::AcrobotEnv)
     end
 
     # Draw links
-    link1_line = lines!(ax, @lift([$joint1, $joint2]), linewidth=8, color=:blue)
-    link2_line = lines!(ax, @lift([$joint2, $tip]), linewidth=8, color=:blue)
+    link1_line = lines!(ax, @lift([$joint1, $joint2]), linewidth = 8, color = :blue)
+    link2_line = lines!(ax, @lift([$joint2, $tip]), linewidth = 8, color = :blue)
 
     # Draw joints
-    joint1_scatter = scatter!(ax, joint1, markersize=15, color=:black)
-    joint2_scatter = scatter!(ax, joint2, markersize=12, color=:orange)
-    tip_scatter = scatter!(ax, tip, markersize=10, color=:red)
+    joint1_scatter = scatter!(ax, joint1, markersize = 15, color = :black)
+    joint2_scatter = scatter!(ax, joint2, markersize = 12, color = :orange)
+    tip_scatter = scatter!(ax, tip, markersize = 10, color = :red)
 
     # Draw goal line
     goal_line = _goal_height_line(env.problem)
-    lines!(ax, goal_line, linewidth=3, color=:green, linestyle=:dash)
+    lines!(ax, goal_line, linewidth = 3, color = :green, linestyle = :dash)
 
     # Draw torque arc and arrow
-    torque_arc = arc!(ax,
+    torque_arc = arc!(
+        ax,
         joint2,
-        @lift(begin
-            t = $torque
-            abs(t) < 1e-3 ? 0.15f0 : 0.15f0 + 0.1f0 * abs(t)
-        end),
-        @lift(begin
-            t = $torque
-            if abs(t) < 1e-3
-                0.0f0
-            else
-                arc_span = π / 3 + π / 6 * abs(t)
-                t > 0 ? -arc_span / 2 : arc_span / 2
+        @lift(
+            begin
+                t = $torque
+                abs(t) < 1.0e-3 ? 0.15f0 : 0.15f0 + 0.1f0 * abs(t)
             end
-        end),
-        @lift(begin
-            t = $torque
-            if abs(t) < 1e-3
-                0.0f0
-            else
-                arc_span = π / 3 + π / 6 * abs(t)
-                t > 0 ? arc_span / 2 : -arc_span / 2
+        ),
+        @lift(
+            begin
+                t = $torque
+                if abs(t) < 1.0e-3
+                    0.0f0
+                else
+                    arc_span = π / 3 + π / 6 * abs(t)
+                    t > 0 ? -arc_span / 2 : arc_span / 2
+                end
             end
-        end),
-        color=@lift($torque > 0 ? :green : :red),
-        linewidth=3,
-        visible=@lift(abs($torque) > 1e-3)
+        ),
+        @lift(
+            begin
+                t = $torque
+                if abs(t) < 1.0e-3
+                    0.0f0
+                else
+                    arc_span = π / 3 + π / 6 * abs(t)
+                    t > 0 ? arc_span / 2 : -arc_span / 2
+                end
+            end
+        ),
+        color = @lift($torque > 0 ? :green : :red),
+        linewidth = 3,
+        visible = @lift(abs($torque) > 1.0e-3)
     )
 
-    torque_arrow = arrows2d!(ax,
-        @lift(begin
-            t = $torque
-            if abs(t) < 1e-3
-                [Point2f(0, 0)]
-            else
-                arc_radius = 0.15f0 + 0.1f0 * abs(t)
-                arc_span = π / 3 + π / 6 * abs(t)
-                stop_angle = t > 0 ? arc_span / 2 : -arc_span / 2
-                [Point2f($joint2[1] + arc_radius * cos(stop_angle),
-                    $joint2[2] + arc_radius * sin(stop_angle))]
+    torque_arrow = arrows2d!(
+        ax,
+        @lift(
+            begin
+                t = $torque
+                if abs(t) < 1.0e-3
+                    [Point2f(0, 0)]
+                else
+                    arc_radius = 0.15f0 + 0.1f0 * abs(t)
+                    arc_span = π / 3 + π / 6 * abs(t)
+                    stop_angle = t > 0 ? arc_span / 2 : -arc_span / 2
+                    [
+                        Point2f(
+                            $joint2[1] + arc_radius * cos(stop_angle),
+                            $joint2[2] + arc_radius * sin(stop_angle)
+                        ),
+                    ]
+                end
             end
-        end),
-        @lift(begin
-            t = $torque
-            if abs(t) < 1e-3
-                [Vec2f(0, 0)]
-            else
-                arc_span = π / 3 + π / 6 * abs(t)
-                stop_angle = t > 0 ? arc_span / 2 : -arc_span / 2
-                arrow_angle = t > 0 ? stop_angle + π / 2 : stop_angle - π / 2
-                head_length = 0.15f0
-                [Vec2f(head_length * cos(arrow_angle), head_length * sin(arrow_angle))]
+        ),
+        @lift(
+            begin
+                t = $torque
+                if abs(t) < 1.0e-3
+                    [Vec2f(0, 0)]
+                else
+                    arc_span = π / 3 + π / 6 * abs(t)
+                    stop_angle = t > 0 ? arc_span / 2 : -arc_span / 2
+                    arrow_angle = t > 0 ? stop_angle + π / 2 : stop_angle - π / 2
+                    head_length = 0.15f0
+                    [Vec2f(head_length * cos(arrow_angle), head_length * sin(arrow_angle))]
+                end
             end
-        end),
-        color=@lift($torque > 0 ? :green : :red),
-        shaftwidth=0.01,
-        tiplength=15,
-        tipwidth=15,
-        visible=@lift(abs($torque) > 1e-3)
+        ),
+        color = @lift($torque > 0 ? :green : :red),
+        shaftwidth = 0.01,
+        tiplength = 15,
+        tipwidth = 15,
+        visible = @lift(abs($torque) > 1.0e-3)
     )
 
     # Set axis properties
@@ -366,26 +404,26 @@ function ClassicControlEnvironments.interactive_viz(env::AcrobotEnv)
     ax.title = "Acrobot Environment"
 
     # Reward display
-    rew_ax = Axis(fig[1, 2], title="Cumulative Reward")
-    rew_bar = barplot!(rew_ax, [1], @lift([$total_rew]), color=:blue)
+    rew_ax = Axis(fig[1, 2], title = "Cumulative Reward")
+    rew_bar = barplot!(rew_ax, [1], @lift([$total_rew]), color = :blue)
     colsize!(fig.layout, 2, Relative(0.25))
 
     # Control buttons for actions
     button_grid = GridLayout(fig[2, 1:2])
     action_buttons = [
-        Button(button_grid[1, 1], label="Torque -1", tellwidth=false),
-        Button(button_grid[1, 2], label="Torque 0", tellwidth=false),
-        Button(button_grid[1, 3], label="Torque +1", tellwidth=false)
+        Button(button_grid[1, 1], label = "Torque -1", tellwidth = false),
+        Button(button_grid[1, 2], label = "Torque 0", tellwidth = false),
+        Button(button_grid[1, 3], label = "Torque +1", tellwidth = false),
     ]
 
     # Control buttons for simulation
     control_grid = GridLayout(fig[3, 1:2])
-    start_button = Button(control_grid[1, 1], label="Start Auto", tellwidth=false)
-    stop_button = Button(control_grid[1, 2], label="Stop Auto", tellwidth=false)
-    step_button = Button(control_grid[1, 3], label="Single Step", tellwidth=false)
-    reset_button = Button(control_grid[1, 4], label="Reset", tellwidth=false)
+    start_button = Button(control_grid[1, 1], label = "Start Auto", tellwidth = false)
+    stop_button = Button(control_grid[1, 2], label = "Stop Auto", tellwidth = false)
+    step_button = Button(control_grid[1, 3], label = "Single Step", tellwidth = false)
+    reset_button = Button(control_grid[1, 4], label = "Reset", tellwidth = false)
 
-    current_task = Ref{Union{Task,Nothing}}(nothing)
+    current_task = Ref{Union{Task, Nothing}}(nothing)
     current_action = Observable(1)  # Default to no torque
 
     # Action button functionality
@@ -537,7 +575,7 @@ function ClassicControlEnvironments.interactive_viz(env::AcrobotEnv)
 end
 
 function ClassicControlEnvironments.plot_trajectory(env::AcrobotEnv, observations::AbstractArray, actions::AbstractArray, rewards::AbstractArray)
-    fig = Figure(size=(1000, 800))
+    fig = Figure(size = (1000, 800))
     n = length(observations)
 
     # Extract observation components
@@ -558,42 +596,46 @@ function ClassicControlEnvironments.plot_trajectory(env::AcrobotEnv, observation
     else
         actions = [Int(a) for a in actions]
     end
-    torque_vals = [env.problem.avail_torque[a+1] for a in actions]
+    torque_vals = [env.problem.avail_torque[a + 1] for a in actions]
 
     # Angle plots
-    ax_theta1 = Axis(fig[1, 1], title="Link 1 Angle (θ₁)")
-    scatterlines!(ax_theta1, theta1_vals, label="θ₁ (radians)")
+    ax_theta1 = Axis(fig[1, 1], title = "Link 1 Angle (θ₁)")
+    scatterlines!(ax_theta1, theta1_vals, label = "θ₁ (radians)")
 
-    ax_theta2 = Axis(fig[1, 2], title="Link 2 Angle (θ₂)")
-    scatterlines!(ax_theta2, theta2_vals, label="θ₂ (radians)")
+    ax_theta2 = Axis(fig[1, 2], title = "Link 2 Angle (θ₂)")
+    scatterlines!(ax_theta2, theta2_vals, label = "θ₂ (radians)")
 
     # Angular velocity plots
-    ax_dtheta1 = Axis(fig[2, 1], title="Link 1 Angular Velocity")
-    scatterlines!(ax_dtheta1, dtheta1, label="θ̇₁ (rad/s)")
-    hlines!(ax_dtheta1, [-env.problem.max_vel_1, env.problem.max_vel_1],
-        color=:red, linestyle=:dash, label="Velocity Bounds")
+    ax_dtheta1 = Axis(fig[2, 1], title = "Link 1 Angular Velocity")
+    scatterlines!(ax_dtheta1, dtheta1, label = "θ̇₁ (rad/s)")
+    hlines!(
+        ax_dtheta1, [-env.problem.max_vel_1, env.problem.max_vel_1],
+        color = :red, linestyle = :dash, label = "Velocity Bounds"
+    )
 
-    ax_dtheta2 = Axis(fig[2, 2], title="Link 2 Angular Velocity")
-    scatterlines!(ax_dtheta2, dtheta2, label="θ̇₂ (rad/s)")
-    hlines!(ax_dtheta2, [-env.problem.max_vel_2, env.problem.max_vel_2],
-        color=:red, linestyle=:dash, label="Velocity Bounds")
+    ax_dtheta2 = Axis(fig[2, 2], title = "Link 2 Angular Velocity")
+    scatterlines!(ax_dtheta2, dtheta2, label = "θ̇₂ (rad/s)")
+    hlines!(
+        ax_dtheta2, [-env.problem.max_vel_2, env.problem.max_vel_2],
+        color = :red, linestyle = :dash, label = "Velocity Bounds"
+    )
 
     # Action/torque plot
-    ax_action = Axis(fig[3, 1], title="Applied Torque")
-    stairs!(ax_action, torque_vals, label="Torque")
-    hlines!(ax_action, [-1.0, 0.0, 1.0], color=:gray, linestyle=:dot, label="Available Torques")
+    ax_action = Axis(fig[3, 1], title = "Applied Torque")
+    stairs!(ax_action, torque_vals, label = "Torque")
+    hlines!(ax_action, [-1.0, 0.0, 1.0], color = :gray, linestyle = :dot, label = "Available Torques")
 
     # Reward plot (shifted to align with resulting observations)
-    ax_rew = Axis(fig[3, 2], title="Rewards")
+    ax_rew = Axis(fig[3, 2], title = "Rewards")
     # Pad rewards with NaN for the first observation (no preceding action)
     shifted_rewards = [NaN; rewards]
-    scatterlines!(ax_rew, shifted_rewards, label="Reward")
+    scatterlines!(ax_rew, shifted_rewards, label = "Reward")
 
     # Tip height over time
-    ax_height = Axis(fig[4, 1:2], title="Tip Height Over Time")
+    ax_height = Axis(fig[4, 1:2], title = "Tip Height Over Time")
     tip_heights = -cos.(theta1_vals) .- cos.(theta2_vals .+ theta1_vals)
-    scatterlines!(ax_height, tip_heights, label="Tip Height")
-    hlines!(ax_height, [1.0], color=:green, linestyle=:dash, label="Goal Height")
+    scatterlines!(ax_height, tip_heights, label = "Tip Height")
+    hlines!(ax_height, [1.0], color = :green, linestyle = :dash, label = "Goal Height")
     ax_height.xlabel = "Time Step"
     ax_height.ylabel = "Height"
 
@@ -602,7 +644,7 @@ function ClassicControlEnvironments.plot_trajectory(env::AcrobotEnv, observation
     #     axislegend(ax)
     # end
 
-    fig
+    return fig
 end
 
 function ClassicControlEnvironments.plot_trajectory_interactive(env::AcrobotEnv, observations::AbstractArray, actions::AbstractArray, rewards::AbstractArray)
@@ -612,7 +654,7 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::AcrobotEnv,
     else
         actions = [Int(a) for a in actions]
     end
-    torque_vals = [env.problem.avail_torque[a+1] for a in actions]
+    torque_vals = [env.problem.avail_torque[a + 1] for a in actions]
 
     num_steps = length(observations)
     if num_steps == 0
@@ -630,40 +672,41 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::AcrobotEnv,
 
     # Create problem for visualization
     problem_for_viz = AcrobotProblem(
-        theta1=initial_theta1,
-        theta2=initial_theta2,
-        torque=initial_torque,
-        dt=env.problem.dt,
-        link_length_1=env.problem.link_length_1,
-        link_length_2=env.problem.link_length_2,
-        link_mass_1=env.problem.link_mass_1,
-        link_mass_2=env.problem.link_mass_2,
-        max_vel_1=env.problem.max_vel_1,
-        max_vel_2=env.problem.max_vel_2
+        theta1 = initial_theta1,
+        theta2 = initial_theta2,
+        torque = initial_torque,
+        dt = env.problem.dt,
+        link_length_1 = env.problem.link_length_1,
+        link_length_2 = env.problem.link_length_2,
+        link_mass_1 = env.problem.link_mass_1,
+        link_mass_2 = env.problem.link_mass_2,
+        max_vel_1 = env.problem.max_vel_1,
+        max_vel_2 = env.problem.max_vel_2
     )
 
     # Get live visualization
-    _, _, _, fig, update_viz! = live_viz(problem_for_viz; size=(700, 600))
+    _, _, _, fig, update_viz! = live_viz(problem_for_viz; size = (700, 600))
 
     # Add trajectory controls
     display(fig)
-    sg = SliderGrid(fig[2, 1],
-        (label="Step", range=1:num_steps, startvalue=1),
-        (label="Playback Speed", range=0.01:0.01:0.2, startvalue=0.1)
+    sg = SliderGrid(
+        fig[2, 1],
+        (label = "Step", range = 1:num_steps, startvalue = 1),
+        (label = "Playback Speed", range = 0.01:0.01:0.2, startvalue = 0.1)
     )
     trajectory_slider = sg.sliders[1]
     speed_slider = sg.sliders[2]
 
     # Control buttons
     button_grid = GridLayout(fig[3, 1])
-    start_button = Button(button_grid[1, 1], label="Play", tellwidth=false)
-    stop_button = Button(button_grid[1, 2], label="Pause", tellwidth=false)
-    step_button = Button(button_grid[1, 3], label="Next Step", tellwidth=false)
-    reset_button = Button(button_grid[1, 4], label="Reset", tellwidth=false)
+    start_button = Button(button_grid[1, 1], label = "Play", tellwidth = false)
+    stop_button = Button(button_grid[1, 2], label = "Pause", tellwidth = false)
+    step_button = Button(button_grid[1, 3], label = "Next Step", tellwidth = false)
+    reset_button = Button(button_grid[1, 4], label = "Reset", tellwidth = false)
 
     # Button states
     auto_playing = Observable(false)
-    current_task = Ref{Union{Task,Nothing}}(nothing)
+    current_task = Ref{Union{Task, Nothing}}(nothing)
 
     # Function to update visualization for a given step
     function update_step!(step_idx)
@@ -674,14 +717,14 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::AcrobotEnv,
         current_torque = step_idx <= length(torque_vals) ? torque_vals[step_idx] : 0.0f0
 
         updated_problem = AcrobotProblem(
-            theta1=current_theta1,
-            theta2=current_theta2,
-            torque=current_torque,
-            dt=env.problem.dt,
-            link_length_1=env.problem.link_length_1,
-            link_length_2=env.problem.link_length_2
+            theta1 = current_theta1,
+            theta2 = current_theta2,
+            torque = current_torque,
+            dt = env.problem.dt,
+            link_length_1 = env.problem.link_length_1,
+            link_length_2 = env.problem.link_length_2
         )
-        update_viz!(updated_problem)
+        return update_viz!(updated_problem)
     end
 
     # Manual slider control
@@ -754,19 +797,20 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::AcrobotEnv,
     return fig, trajectory_slider, start_button, stop_button, step_button, reset_button
 end
 
-function ClassicControlEnvironments.animate_trajectory_video(env::AcrobotEnv,
-    observations::AbstractArray,
-    actions::AbstractArray,
-    output_filename::AbstractString;
-    target_fps::Int=25
-)
+function ClassicControlEnvironments.animate_trajectory_video(
+        env::AcrobotEnv,
+        observations::AbstractArray,
+        actions::AbstractArray,
+        output_filename::AbstractString;
+        target_fps::Int = 25
+    )
     # Convert actions to torque values
     if !isempty(actions) && actions[1] isa AbstractArray
         actions = [Int(a[1]) for a in actions]
     else
         actions = [Int(a) for a in actions]
     end
-    torque_vals = [env.problem.avail_torque[a+1] for a in actions]
+    torque_vals = [env.problem.avail_torque[a + 1] for a in actions]
 
     num_steps = length(observations)
     if num_steps == 0
@@ -782,12 +826,12 @@ function ClassicControlEnvironments.animate_trajectory_video(env::AcrobotEnv,
     initial_theta2 = atan(initial_obs[4], initial_obs[3])
 
     problem_for_viz = AcrobotProblem(
-        theta1=initial_theta1,
-        theta2=initial_theta2,
-        torque=torque_vals[1],
-        dt=env.problem.dt,
-        link_length_1=env.problem.link_length_1,
-        link_length_2=env.problem.link_length_2
+        theta1 = initial_theta1,
+        theta2 = initial_theta2,
+        torque = torque_vals[1],
+        dt = env.problem.dt,
+        link_length_1 = env.problem.link_length_1,
+        link_length_2 = env.problem.link_length_2
     )
 
     _, _, _, fig, update_viz! = live_viz(problem_for_viz)
@@ -801,14 +845,14 @@ function ClassicControlEnvironments.animate_trajectory_video(env::AcrobotEnv,
         current_torque = step_idx <= length(torque_vals) ? torque_vals[step_idx] : 0.0f0
 
         updated_problem = AcrobotProblem(
-            theta1=current_theta1,
-            theta2=current_theta2,
-            torque=current_torque,
-            dt=env.problem.dt,
-            link_length_1=env.problem.link_length_1,
-            link_length_2=env.problem.link_length_2
+            theta1 = current_theta1,
+            theta2 = current_theta2,
+            torque = current_torque,
+            dt = env.problem.dt,
+            link_length_1 = env.problem.link_length_1,
+            link_length_2 = env.problem.link_length_2
         )
-        update_viz!(updated_problem)
+        return update_viz!(updated_problem)
     end
 
     # Use dt from problem for frame rate calculation
@@ -816,14 +860,14 @@ function ClassicControlEnvironments.animate_trajectory_video(env::AcrobotEnv,
     steps_per_frame = max(1, round(Int, 1 / (target_fps * dt)))
     frame_indices = 1:steps_per_frame:num_steps
 
-    Makie.record(fig, output_filename, frame_indices; framerate=target_fps) do step_idx
+    Makie.record(fig, output_filename, frame_indices; framerate = target_fps) do step_idx
         frame_update(step_idx)
     end
 
     return output_filename
 end
 
-function ClassicControlEnvironments.plot_trajectory_phase_space(env::AcrobotEnv, observations::AbstractArray, actions::AbstractArray; size=(800, 600))
+function ClassicControlEnvironments.plot_trajectory_phase_space(env::AcrobotEnv, observations::AbstractArray, actions::AbstractArray; size = (800, 600))
     # Extract observation components and reconstruct angles
     cos_theta1 = getindex.(observations, 1)
     sin_theta1 = getindex.(observations, 2)
@@ -835,33 +879,33 @@ function ClassicControlEnvironments.plot_trajectory_phase_space(env::AcrobotEnv,
     theta1_vals = atan.(sin_theta1, cos_theta1)
     theta2_vals = atan.(sin_theta2, cos_theta2)
 
-    fig = Figure(size=size)
+    fig = Figure(size = size)
 
     # Phase space for link 1
-    ax1 = Axis(fig[1, 1], title="Link 1 Phase Space (θ₁ vs θ̇₁)")
-    scatterlines!(ax1, rad2deg.(theta1_vals), dtheta1, label="Trajectory")
-    scatter!(ax1, [rad2deg(theta1_vals[1])], [dtheta1[1]], color=:green, markersize=10, label="Start")
-    scatter!(ax1, [rad2deg(theta1_vals[end])], [dtheta1[end]], color=:red, markersize=10, label="End")
-    hlines!(ax1, [-env.problem.max_vel_1, env.problem.max_vel_1], color=:red, linestyle=:dash, label="Velocity Bounds")
+    ax1 = Axis(fig[1, 1], title = "Link 1 Phase Space (θ₁ vs θ̇₁)")
+    scatterlines!(ax1, rad2deg.(theta1_vals), dtheta1, label = "Trajectory")
+    scatter!(ax1, [rad2deg(theta1_vals[1])], [dtheta1[1]], color = :green, markersize = 10, label = "Start")
+    scatter!(ax1, [rad2deg(theta1_vals[end])], [dtheta1[end]], color = :red, markersize = 10, label = "End")
+    hlines!(ax1, [-env.problem.max_vel_1, env.problem.max_vel_1], color = :red, linestyle = :dash, label = "Velocity Bounds")
     ax1.xlabel = "θ₁ (degrees)"
     ax1.ylabel = "θ̇₁ (rad/s)"
     axislegend(ax1)
 
     # Phase space for link 2
-    ax2 = Axis(fig[1, 2], title="Link 2 Phase Space (θ₂ vs θ̇₂)")
-    scatterlines!(ax2, rad2deg.(theta2_vals), dtheta2, label="Trajectory")
-    scatter!(ax2, [rad2deg(theta2_vals[1])], [dtheta2[1]], color=:green, markersize=10, label="Start")
-    scatter!(ax2, [rad2deg(theta2_vals[end])], [dtheta2[end]], color=:red, markersize=10, label="End")
-    hlines!(ax2, [-env.problem.max_vel_2, env.problem.max_vel_2], color=:red, linestyle=:dash, label="Velocity Bounds")
+    ax2 = Axis(fig[1, 2], title = "Link 2 Phase Space (θ₂ vs θ̇₂)")
+    scatterlines!(ax2, rad2deg.(theta2_vals), dtheta2, label = "Trajectory")
+    scatter!(ax2, [rad2deg(theta2_vals[1])], [dtheta2[1]], color = :green, markersize = 10, label = "Start")
+    scatter!(ax2, [rad2deg(theta2_vals[end])], [dtheta2[end]], color = :red, markersize = 10, label = "End")
+    hlines!(ax2, [-env.problem.max_vel_2, env.problem.max_vel_2], color = :red, linestyle = :dash, label = "Velocity Bounds")
     ax2.xlabel = "θ₂ (degrees)"
     ax2.ylabel = "θ̇₂ (rad/s)"
     axislegend(ax2)
 
     # Combined configuration space
-    ax3 = Axis(fig[2, 1:2], title="Configuration Space (θ₁ vs θ₂)")
-    scatterlines!(ax3, rad2deg.(theta1_vals), rad2deg.(theta2_vals), label="Trajectory")
-    scatter!(ax3, [rad2deg(theta1_vals[1])], [rad2deg(theta2_vals[1])], color=:green, markersize=10, label="Start")
-    scatter!(ax3, [rad2deg(theta1_vals[end])], [rad2deg(theta2_vals[end])], color=:red, markersize=10, label="End")
+    ax3 = Axis(fig[2, 1:2], title = "Configuration Space (θ₁ vs θ₂)")
+    scatterlines!(ax3, rad2deg.(theta1_vals), rad2deg.(theta2_vals), label = "Trajectory")
+    scatter!(ax3, [rad2deg(theta1_vals[1])], [rad2deg(theta2_vals[1])], color = :green, markersize = 10, label = "Start")
+    scatter!(ax3, [rad2deg(theta1_vals[end])], [rad2deg(theta2_vals[end])], color = :red, markersize = 10, label = "End")
     ax3.xlabel = "θ₁ (degrees)"
     ax3.ylabel = "θ₂ (degrees)"
     axislegend(ax3)

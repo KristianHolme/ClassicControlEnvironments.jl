@@ -28,7 +28,7 @@ using Random
 
     @testset "Zero action and gravity" begin
         # Create environment with zero gravity
-        env = PendulumEnv(gravity=0.0f0)
+        env = PendulumEnv(gravity = 0.0f0)
         reset!(env)
 
         # Initial angle and velocity
@@ -44,9 +44,9 @@ using Random
 
             # With zero gravity and zero action, velocity should remain constant
             # and theta should change linearly
-            @test isapprox(env.problem.velocity, init_vel, atol=1e-5)
-            if abs(init_vel) < 1e-5
-                @test isapprox(env.problem.theta, init_theta, atol=1e-5)
+            @test isapprox(env.problem.velocity, init_vel, atol = 1.0e-5)
+            if abs(init_vel) < 1.0e-5
+                @test isapprox(env.problem.theta, init_theta, atol = 1.0e-5)
             end
         end
     end
@@ -72,26 +72,27 @@ using Random
 
             # Check each component of the reward
             theta_penalty, vel_penalty, action_penalty = Pendulum.pendulum_rewards(
-                env.problem.theta, env.problem.velocity, action)
+                env.problem.theta, env.problem.velocity, action
+            )
 
             @test theta_penalty <= 0.0f0
             @test vel_penalty <= 0.0f0
             @test action_penalty <= 0.0f0
 
             # Check that sum matches overall reward
-            @test isapprox(current_reward, theta_penalty + vel_penalty + action_penalty, atol=1e-5)
+            @test isapprox(current_reward, theta_penalty + vel_penalty + action_penalty, atol = 1.0e-5)
         end
     end
 
     @testset "Step count and truncation" begin
         max_steps = 50
-        env = PendulumEnv(max_steps=max_steps)
+        env = PendulumEnv(max_steps = max_steps)
         reset!(env)
 
         @test env.step == 0
         @test !truncated(env)
 
-        for i in 1:max_steps-1
+        for i in 1:(max_steps - 1)
             act!(env, 0.0f0)
             @test env.step == i
             @test !truncated(env)

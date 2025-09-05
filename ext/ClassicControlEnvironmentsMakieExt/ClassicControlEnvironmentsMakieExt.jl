@@ -9,5 +9,4 @@ include("CartPoleMakieExt.jl")
 include("AcrobotMakieExt.jl")
 
 
-
 end #module
