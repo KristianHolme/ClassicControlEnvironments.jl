@@ -502,8 +502,7 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::ClassicCont
     on(step_button.clicks) do n
         if !auto_playing[]  # Only allow single steps when not auto-playing
             current_step = min(trajectory_slider.value[] + 1, num_steps)
-            trajectory_slider.value[] = current_step
-            notify(trajectory_slider)
+            set_close_to!(trajectory_slider, current_step)
             update_step!(current_step)
         end
     end
@@ -511,8 +510,7 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::ClassicCont
     # Reset button functionality
     on(reset_button.clicks) do n
         if !auto_playing[]  # Only allow reset when not auto-playing
-            trajectory_slider.value[] = 1
-            notify(trajectory_slider)
+            set_close_to!(trajectory_slider, 1)
             update_step!(1)
         end
     end
