@@ -11,7 +11,7 @@ acrobotenv = NormalizeWrapperEnv(acrobotenv, gamma = alg.gamma)
 acrobotpolicy = ActorCriticPolicy(observation_space(acrobotenv), action_space(acrobotenv))
 acrobotagent = ActorCriticAgent(acrobotpolicy; verbose = 2, n_steps = 128, batch_size = 128, learning_rate = 3.0f-4, epochs = 10)
 ## train agent
-learn_stats = learn!(acrobotagent, acrobotenv, alg, 100_000)
+learn_stats, _ = learn!(acrobotagent, acrobotenv, alg, 100_000)
 ## collect trajectory
 single_env = AcrobotEnv()
 obs, actions, rewards = collect_trajectory(acrobotagent, single_env; norm_env = acrobotenv)

@@ -10,7 +10,7 @@ pendenv = NormalizeWrapperEnv(pendenv, gamma = alg.gamma)
 pendpolicy = ActorCriticPolicy(observation_space(pendenv), action_space(pendenv))
 pendagent = ActorCriticAgent(pendpolicy; verbose = 2, n_steps = 128, batch_size = 128, learning_rate = 2.343f-4, epochs = 30)
 ## train agent
-learn_stats = learn!(pendagent, pendenv, alg, 100_000)
+learn_stats, _ = learn!(pendagent, pendenv, alg, 100_000)
 ## collect trajectory
 single_env = PendulumEnv()
 obs, actions, rewards = collect_trajectory(pendagent, single_env; norm_env = pendenv)
