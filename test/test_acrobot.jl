@@ -261,8 +261,8 @@ end
 
         height = -cos(theta1) - cos(theta2 + theta1)
         expected = height > 1.0f0
-        @info "theta1 = $theta1, theta2 = $theta2, should_terminate = $should_terminate, expected = $expected"
-        @info "height = $height"
+        # @info "theta1 = $theta1, theta2 = $theta2, should_terminate = $should_terminate, expected = $expected"
+        # @info "height = $height"
         @test should_terminate == expected
         @test terminated(env) == expected
     end

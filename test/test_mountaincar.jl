@@ -15,7 +15,7 @@
     for _ in 1:20
         action = rand(rng, 0:2)  # Random discrete action
         act!(env, action)
-        obs = observe(env)
+        local obs = observe(env)
         @test env.problem.min_position <= obs[1] <= env.problem.max_position
         @test -env.problem.max_speed <= obs[2] <= env.problem.max_speed
     end
@@ -38,7 +38,7 @@ end
     for _ in 1:20
         action = rand(rng, Float32) * 2.0f0 - 1.0f0  # Random action in [-1, 1]
         act!(env, action)
-        obs = observe(env)
+        local obs = observe(env)
         @test env.problem.min_position <= obs[1] <= env.problem.max_position
         @test -env.problem.max_speed <= obs[2] <= env.problem.max_speed
     end

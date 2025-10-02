@@ -13,7 +13,7 @@
     for _ in 1:100
         action = rand(rng, Float32) * 4.0f0 - 2.0f0  # Random action in [-2, 2]
         act!(env, action)
-        obs = observe(env)
+        local obs = observe(env)
         @test -1.0f0 <= obs[1] <= 1.0f0  # cos(theta)
         @test -1.0f0 <= obs[2] <= 1.0f0  # sin(theta)
         @test -8.0f0 <= obs[3] <= 8.0f0  # scaled velocity
