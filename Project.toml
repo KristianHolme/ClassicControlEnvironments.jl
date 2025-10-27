@@ -3,8 +3,6 @@ uuid = "a1069ede-d5f9-41a5-87b2-adf4ef867b86"
 authors = ["Kristian Holme <holme.kristian@gmail.com>"]
 version = "0.0.1"
 
-[sources]
-DRiL = {url = "https://github.com/KristianHolme/DRiL.jl.git"}
 
 [deps]
 DRiL = "49b37b9d-a8e6-4364-9144-4677bcb8a7f0"
@@ -28,3 +26,6 @@ TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 
 [targets]
 test = ["Test", "TestItems"]
+
+[sources]
+DRiL = {url = "https://github.com/KristianHolme/DRiL.jl", rev = "main"}
