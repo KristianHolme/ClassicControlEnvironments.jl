@@ -423,8 +423,12 @@ function ClassicControlEnvironments.interactive_viz(env::AcrobotEnv)
     step_button = Button(control_grid[1, 3], label = "Single Step", tellwidth = false)
     reset_button = Button(control_grid[1, 4], label = "Reset", tellwidth = false)
 
-    current_task = Ref{Union{Task, Nothing}}(nothing)
     current_action = Observable(1)  # Default to no torque
+
+    # Accumulated time for tick-based auto-stepping
+    accumulated_time = Ref(0.0)
+    step_interval = 0.1  # ~10 FPS for Acrobot
+    episode_end_pause = Ref(0.0)  # Pause timer at episode end
 
     # Action button functionality
     for (i, button) in enumerate(action_buttons)
@@ -441,48 +445,14 @@ function ClassicControlEnvironments.interactive_viz(env::AcrobotEnv)
         end
     end
 
-    # Auto-running functionality
+    # Auto-running functionality - toggle auto-running state
     on(start_button.clicks) do n
         if !auto_running[]
             auto_running[] = true
             start_button.label = "Running..."
             start_button.buttoncolor = :lightgreen
-
-            current_task[] = @async begin
-                try
-                    while auto_running[]
-                        sleep(0.1)  # ~10 FPS
-                        if auto_running[]
-                            # Use current action
-                            action = current_action[]
-                            act!(env, action)
-                            theta1[] = env.problem.theta1
-                            theta2[] = env.problem.theta2
-                            torque[] = env.problem.torque
-                            rew[] = reward(env)
-                            total_rew[] += rew[]
-
-                            # Check if episode is done
-                            if terminated(env) || truncated(env)
-                                sleep(1.0)  # Pause at the end
-                                reset!(env)
-                                theta1[] = env.problem.theta1
-                                theta2[] = env.problem.theta2
-                                torque[] = env.problem.torque
-                                total_rew[] = 0.0f0
-                            end
-                        end
-                    end
-                catch e
-                    @error "Error in auto-running task" e
-                finally
-                    if auto_running[]
-                        auto_running[] = false
-                        start_button.label = "Start Auto"
-                        start_button.buttoncolor = :lightblue
-                    end
-                end
-            end
+            accumulated_time[] = 0.0
+            episode_end_pause[] = 0.0
         end
     end
 
@@ -491,14 +461,6 @@ function ClassicControlEnvironments.interactive_viz(env::AcrobotEnv)
             auto_running[] = false
             start_button.label = "Start Auto"
             start_button.buttoncolor = :lightblue
-            if !isnothing(current_task[])
-                try
-                    # Try to cancel gracefully
-                    wait(current_task[])
-                catch
-                    # Task was already cancelled or finished
-                end
-            end
         end
     end
 
@@ -531,6 +493,8 @@ function ClassicControlEnvironments.interactive_viz(env::AcrobotEnv)
             theta2[] = env.problem.theta2
             torque[] = env.problem.torque
             total_rew[] = 0.0f0
+            accumulated_time[] = 0.0
+            episode_end_pause[] = 0.0
         end
     end
 
@@ -567,6 +531,49 @@ function ClassicControlEnvironments.interactive_viz(env::AcrobotEnv)
                 theta2[] = env.problem.theta2
                 torque[] = env.problem.torque
                 total_rew[] = 0.0f0
+            end
+        end
+    end
+
+    # Auto-stepping using tick events (replaces @async task)
+    on(events(fig).tick) do tick
+        if auto_running[]
+            # Handle episode end pause
+            if episode_end_pause[] > 0.0
+                episode_end_pause[] -= tick.delta_time
+                if episode_end_pause[] <= 0.0
+                    # Reset after pause
+                    reset!(env)
+                    theta1[] = env.problem.theta1
+                    theta2[] = env.problem.theta2
+                    torque[] = env.problem.torque
+                    total_rew[] = 0.0f0
+                    episode_end_pause[] = 0.0
+                end
+                return
+            end
+
+            accumulated_time[] += tick.delta_time
+
+            # Catch-up loop (cap at 4 steps to keep UI responsive)
+            steps = 0
+            while accumulated_time[] >= step_interval && steps < 4
+                action = current_action[]
+                act!(env, action)
+                theta1[] = env.problem.theta1
+                theta2[] = env.problem.theta2
+                torque[] = env.problem.torque
+                rew[] = reward(env)
+                total_rew[] += rew[]
+
+                # Check if episode is done
+                if terminated(env) || truncated(env)
+                    episode_end_pause[] = 1.0  # Pause for 1 second
+                    break
+                end
+
+                accumulated_time[] -= step_interval
+                steps += 1
             end
         end
     end
@@ -688,25 +695,25 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::AcrobotEnv,
     _, _, _, fig, update_viz! = live_viz(problem_for_viz; size = (700, 600))
 
     # Add trajectory controls
-    display(fig)
+    # display(fig)
     sg = SliderGrid(
         fig[2, 1],
         (label = "Step", range = 1:num_steps, startvalue = 1),
-        (label = "Playback Speed", range = 0.01:0.01:0.2, startvalue = 0.1)
+        (label = "Playback Speed", range = 0.1:0.1:2.0, startvalue = 1.0)
     )
     trajectory_slider = sg.sliders[1]
     speed_slider = sg.sliders[2]
 
-    # Control buttons
-    button_grid = GridLayout(fig[3, 1])
-    start_button = Button(button_grid[1, 1], label = "Play", tellwidth = false)
-    stop_button = Button(button_grid[1, 2], label = "Pause", tellwidth = false)
-    step_button = Button(button_grid[1, 3], label = "Next Step", tellwidth = false)
-    reset_button = Button(button_grid[1, 4], label = "Reset", tellwidth = false)
+    # Control buttons and toggle
+    control_grid = GridLayout(fig[3, 1])
+    Label(control_grid[1, 1], "Play")
+    play_toggle = Toggle(control_grid[1, 2], active = false)
+    step_back_button = Button(control_grid[1, 3], label = "◀ Step", tellwidth = false)
+    step_forward_button = Button(control_grid[1, 4], label = "Step ▶", tellwidth = false)
+    reset_button = Button(control_grid[1, 5], label = "Reset", tellwidth = false)
 
-    # Button states
-    auto_playing = Observable(false)
-    current_task = Ref{Union{Task, Nothing}}(nothing)
+    # State
+    accumulated_time = Ref(0.0)
 
     # Function to update visualization for a given step
     function update_step!(step_idx)
@@ -727,74 +734,102 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::AcrobotEnv,
         return update_viz!(updated_problem)
     end
 
+    # Helper functions for stepping
+    function step_forward!()
+        current_step = min(trajectory_slider.value[] + 1, num_steps)
+        set_close_to!(trajectory_slider, current_step)
+        update_step!(current_step)
+        return nothing
+    end
+
+    function step_back!()
+        current_step = max(trajectory_slider.value[] - 1, 1)
+        set_close_to!(trajectory_slider, current_step)
+        update_step!(current_step)
+        return nothing
+    end
+
     # Manual slider control
     on(trajectory_slider.value) do step_idx
-        if !auto_playing[]
+        if !play_toggle.active[]
             update_step!(step_idx)
         end
     end
 
-    # Start/Play button functionality
-    on(start_button.clicks) do n
-        if !auto_playing[]
-            auto_playing[] = true
-            start_button.label = "Playing..."
-            start_button.buttoncolor = :lightgreen
-
-            current_task[] = @async begin
-                try
-                    current_step = trajectory_slider.value[]
-                    while auto_playing[] && current_step <= num_steps
-                        sleep(speed_slider.value[])
-                        if auto_playing[]
-                            set_close_to!(trajectory_slider, current_step)
-                            update_step!(current_step)
-                            current_step += 1
-
-                            if current_step > num_steps
-                                auto_playing[] = false
-                                break
-                            end
-                        end
-                    end
-                catch e
-                    @warn "Auto-playback task interrupted: $e"
-                finally
-                    auto_playing[] = false
-                    start_button.label = "Play"
-                    start_button.buttoncolor = :lightgray
-                end
-            end
+    # Play toggle state change
+    on(play_toggle.active) do active
+        if active
+            accumulated_time[] = 0.0
         end
     end
 
-    # Stop/Pause button functionality
-    on(stop_button.clicks) do n
-        if auto_playing[]
-            auto_playing[] = false
-            start_button.label = "Play"
-            start_button.buttoncolor = :lightgray
+    # Step buttons
+    on(step_back_button.clicks) do n
+        if !play_toggle.active[]
+            step_back!()
         end
     end
 
-    # Single step button functionality
-    on(step_button.clicks) do n
-        if !auto_playing[]
-            current_step = min(trajectory_slider.value[] + 1, num_steps)
-            set_close_to!(trajectory_slider, current_step)
-            update_step!(current_step)
+    on(step_forward_button.clicks) do n
+        if !play_toggle.active[]
+            step_forward!()
         end
     end
 
     # Reset button functionality
     on(reset_button.clicks) do n
-        if !auto_playing[]
-            set_close_to!(trajectory_slider, 1)
-            update_step!(1)
+        play_toggle.active[] = false
+        set_close_to!(trajectory_slider, 1)
+        update_step!(1)
+        accumulated_time[] = 0.0
+    end
+
+    # Keyboard controls: Space = play/pause, Left/Right = step
+    on(events(fig).keyboardbutton) do event
+        if event.action == Keyboard.press
+            if event.key == Keyboard.space
+                play_toggle.active[] = !play_toggle.active[]
+            elseif event.key == Keyboard.left && !play_toggle.active[]
+                step_back!()
+            elseif event.key == Keyboard.right && !play_toggle.active[]
+                step_forward!()
+            end
         end
     end
 
-    return fig, trajectory_slider, start_button, stop_button, step_button, reset_button
+    # Auto-playback using tick events
+    on(events(fig).tick) do tick
+        if play_toggle.active[]
+            current_step = trajectory_slider.value[]
+
+            # Stop at end of trajectory
+            if current_step > num_steps
+                play_toggle.active[] = false
+                return
+            end
+
+            accumulated_time[] += tick.delta_time
+            speed = max(speed_slider.value[], 0.1)
+            step_interval = env.problem.dt / speed
+
+            # Catch-up loop (cap at 4 steps to keep UI responsive)
+            steps = 0
+            while accumulated_time[] >= step_interval && steps < 4
+                current_step = trajectory_slider.value[]
+                if current_step > num_steps
+                    play_toggle.active[] = false
+                    break
+                end
+                set_close_to!(trajectory_slider, current_step)
+                update_step!(current_step)
+                set_close_to!(trajectory_slider, current_step + 1)
+                accumulated_time[] -= step_interval
+                steps += 1
+            end
+        end
+    end
+
+    return fig, trajectory_slider, play_toggle, step_back_button, step_forward_button, reset_button
 end
 
 function ClassicControlEnvironments.animate_trajectory_video(

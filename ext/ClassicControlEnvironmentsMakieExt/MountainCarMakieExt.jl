@@ -217,7 +217,9 @@ function ClassicControlEnvironments.interactive_viz(env::ClassicControlEnvironme
     step_button = Button(button_grid[1, 3], label = "Single Step", tellwidth = false)
     reset_button = Button(button_grid[1, 4], label = "Reset", tellwidth = false)
 
-    current_task = Ref{Union{Task, Nothing}}(nothing)
+    # Accumulated time for tick-based auto-stepping
+    accumulated_time = Ref(0.0)
+    step_interval = 0.05  # ~20 FPS for MountainCar
 
     # Helper function to convert force to action
     function force_to_action(force_val)
@@ -234,44 +236,13 @@ function ClassicControlEnvironments.interactive_viz(env::ClassicControlEnvironme
         force[] = val
     end
 
-    # Auto-running functionality
+    # Auto-running functionality - toggle auto-running state
     on(start_button.clicks) do n
         if !auto_running[]
             auto_running[] = true
             start_button.label = "Running..."
             start_button.buttoncolor = :lightgreen
-
-            current_task[] = @async begin
-                try
-                    while auto_running[]
-                        sleep(0.05)  # ~20 FPS
-                        if auto_running[]
-                            action = force_to_action(force[])
-                            act!(env, action)
-                            position[] = env.problem.position
-                            velocity[] = env.problem.velocity
-                            rew[] = ClassicControlEnvironments.reward(env)
-                            min_rew[] = min(min_rew[], rew[])
-
-                            # Check if episode ended
-                            if terminated(env) || truncated(env)
-                                auto_running[] = false
-                                start_button.label = "Episode Ended"
-                                start_button.buttoncolor = :orange
-                                break
-                            end
-                        end
-                    end
-                catch e
-                    @warn "Auto-stepping task interrupted: $e"
-                finally
-                    if auto_running[]
-                        auto_running[] = false
-                        start_button.label = "Start Auto"
-                        start_button.buttoncolor = :lightgray
-                    end
-                end
-            end
+            accumulated_time[] = 0.0
         end
     end
 
@@ -308,6 +279,41 @@ function ClassicControlEnvironments.interactive_viz(env::ClassicControlEnvironme
             min_rew[] = rew[]
             start_button.label = "Start Auto"
             start_button.buttoncolor = :lightgray
+            accumulated_time[] = 0.0
+        end
+    end
+
+    # Auto-stepping using tick events (replaces @async task)
+    on(events(fig).tick) do tick
+        if auto_running[]
+            # Check if episode ended
+            if terminated(env) || truncated(env)
+                auto_running[] = false
+                start_button.label = "Episode Ended"
+                start_button.buttoncolor = :orange
+                return
+            end
+
+            accumulated_time[] += tick.delta_time
+
+            # Catch-up loop (cap at 4 steps to keep UI responsive)
+            steps = 0
+            while accumulated_time[] >= step_interval && steps < 4
+                if terminated(env) || truncated(env)
+                    auto_running[] = false
+                    start_button.label = "Episode Ended"
+                    start_button.buttoncolor = :orange
+                    break
+                end
+                action = force_to_action(force[])
+                act!(env, action)
+                position[] = env.problem.position
+                velocity[] = env.problem.velocity
+                rew[] = ClassicControlEnvironments.reward(env)
+                min_rew[] = min(min_rew[], rew[])
+                accumulated_time[] -= step_interval
+                steps += 1
+            end
         end
     end
 
@@ -399,25 +405,25 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::ClassicCont
     _, _, _, fig, update_viz! = live_viz(problem_for_viz; size = (600, 600))
 
     # Add a slider for trajectory step
-    #display(fig)
     sg = SliderGrid(
         fig[2, 1],
         (label = "Step", range = 1:num_steps, startvalue = 1),
-        (label = "Playback Speed", range = 0.01:0.01:0.1, startvalue = 0.05)
+        (label = "Playback Speed", range = 0.1:0.1:2.0, startvalue = 1.0)
     )
     trajectory_slider = sg.sliders[1]
     speed_slider = sg.sliders[2]
 
-    # Control buttons for automatic trajectory playback
-    button_grid = GridLayout(fig[3, 1])
-    start_button = Button(button_grid[1, 1], label = "Play", tellwidth = false)
-    stop_button = Button(button_grid[1, 2], label = "Pause", tellwidth = false)
-    step_button = Button(button_grid[1, 3], label = "Next Step", tellwidth = false)
-    reset_button = Button(button_grid[1, 4], label = "Reset", tellwidth = false)
+    # Control buttons and toggle
+    control_grid = GridLayout(fig[3, 1])
+    Label(control_grid[1, 1], "Play")
+    play_toggle = Toggle(control_grid[1, 2], active = false)
+    step_back_button = Button(control_grid[1, 3], label = "◀ Step", tellwidth = false)
+    step_forward_button = Button(control_grid[1, 4], label = "Step ▶", tellwidth = false)
+    reset_button = Button(control_grid[1, 5], label = "Reset", tellwidth = false)
 
-    # Button states
-    auto_playing = Observable(false)
-    current_task = Ref{Union{Task, Nothing}}(nothing)
+    # State
+    accumulated_time = Ref(0.0)
+    step_interval = 0.05  # Base interval for MountainCar
 
     # Function to update visualization for a given step
     function update_step!(step_idx)
@@ -441,81 +447,102 @@ function ClassicControlEnvironments.plot_trajectory_interactive(env::ClassicCont
         return update_viz!(updated_problem)
     end
 
+    # Helper functions for stepping
+    function step_forward!()
+        current_step = min(trajectory_slider.value[] + 1, num_steps)
+        set_close_to!(trajectory_slider, current_step)
+        update_step!(current_step)
+        return nothing
+    end
+
+    function step_back!()
+        current_step = max(trajectory_slider.value[] - 1, 1)
+        set_close_to!(trajectory_slider, current_step)
+        update_step!(current_step)
+        return nothing
+    end
+
     # Manual slider control
     on(trajectory_slider.value) do step_idx
-        if !auto_playing[]  # Only respond to manual slider changes when not auto-playing
+        if !play_toggle.active[]
             update_step!(step_idx)
         end
     end
 
-    # Start/Play button functionality
-    on(start_button.clicks) do n
-        if !auto_playing[]
-            auto_playing[] = true
-            start_button.label = "Playing..."
-            start_button.buttoncolor = :lightgreen
-
-            # Start the automatic playback task
-            current_task[] = @async begin
-                try
-                    current_step = trajectory_slider.value[]
-                    while auto_playing[] && current_step <= num_steps
-                        sleep(speed_slider.value[])
-                        if auto_playing[]  # Check again after sleep
-                            # Update slider position and visualization
-                            set_close_to!(trajectory_slider, current_step)
-                            update_step!(current_step)
-                            current_step += 1
-
-                            # Stop at end of trajectory
-                            if current_step > num_steps
-                                auto_playing[] = false
-                                break
-                            end
-                        end
-                    end
-                catch e
-                    @warn "Auto-playback task interrupted: $e"
-                finally
-                    auto_playing[] = false
-                    start_button.label = "Play"
-                    start_button.buttoncolor = :lightgray
-                end
-            end
+    # Play toggle state change
+    on(play_toggle.active) do active
+        if active
+            accumulated_time[] = 0.0
         end
     end
 
-    # Stop/Pause button functionality
-    on(stop_button.clicks) do n
-        if auto_playing[]
-            auto_playing[] = false
-            start_button.label = "Play"
-            start_button.buttoncolor = :lightgray
-            if !isnothing(current_task[])
-                # Give the task a moment to finish cleanly
-                sleep(0.01)
-            end
+    # Step buttons
+    on(step_back_button.clicks) do n
+        if !play_toggle.active[]
+            step_back!()
         end
     end
 
-    # Single step button functionality
-    on(step_button.clicks) do n
-        if !auto_playing[]  # Only allow single steps when not auto-playing
-            current_step = min(trajectory_slider.value[] + 1, num_steps)
-            set_close_to!(trajectory_slider, current_step)
-            update_step!(current_step)
+    on(step_forward_button.clicks) do n
+        if !play_toggle.active[]
+            step_forward!()
         end
     end
 
     # Reset button functionality
     on(reset_button.clicks) do n
-        if !auto_playing[]  # Only allow reset when not auto-playing
-            set_close_to!(trajectory_slider, 1)
-            update_step!(1)
+        play_toggle.active[] = false
+        set_close_to!(trajectory_slider, 1)
+        update_step!(1)
+        accumulated_time[] = 0.0
+    end
+
+    # Keyboard controls: Space = play/pause, Left/Right = step
+    on(events(fig).keyboardbutton) do event
+        if event.action == Keyboard.press
+            if event.key == Keyboard.space
+                play_toggle.active[] = !play_toggle.active[]
+            elseif event.key == Keyboard.left && !play_toggle.active[]
+                step_back!()
+            elseif event.key == Keyboard.right && !play_toggle.active[]
+                step_forward!()
+            end
         end
     end
 
-    return fig, trajectory_slider, start_button, stop_button, step_button, reset_button
+    # Auto-playback using tick events
+    on(events(fig).tick) do tick
+        if play_toggle.active[]
+            current_step = trajectory_slider.value[]
+
+            # Stop at end of trajectory
+            if current_step > num_steps
+                play_toggle.active[] = false
+                return
+            end
+
+            accumulated_time[] += tick.delta_time
+            speed = max(speed_slider.value[], 0.1)
+            effective_interval = step_interval / speed
+
+            # Catch-up loop (cap at 4 steps to keep UI responsive)
+            steps = 0
+            while accumulated_time[] >= effective_interval && steps < 4
+                current_step = trajectory_slider.value[]
+                if current_step > num_steps
+                    play_toggle.active[] = false
+                    break
+                end
+                set_close_to!(trajectory_slider, current_step)
+                update_step!(current_step)
+                set_close_to!(trajectory_slider, current_step + 1)
+                accumulated_time[] -= effective_interval
+                steps += 1
+            end
+        end
+    end
+
+    return fig, trajectory_slider, play_toggle, step_back_button, step_forward_button, reset_button
 end
 
 function ClassicControlEnvironments.animate_trajectory_video(
