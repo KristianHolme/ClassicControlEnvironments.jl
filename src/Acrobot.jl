@@ -56,7 +56,7 @@ mutable struct AcrobotEnv <: AbstractEnv
     end
 end
 
-function DRiL.reset!(env::AcrobotEnv)
+function Drill.reset!(env::AcrobotEnv)
     reset!(env.problem, env.rng)
     env.step = 0
     return nothing
@@ -151,11 +151,11 @@ function rk4_step(problem::AcrobotProblem, state::Vector{Float32}, dt::Float32)
     return new_state[1:4]  # Return only the state variables, not the torque
 end
 
-function DRiL.act!(env::AcrobotEnv, action::AbstractArray{Int, 1})
-    return DRiL.act!(env, action[1])
+function Drill.act!(env::AcrobotEnv, action::AbstractArray{Int, 1})
+    return Drill.act!(env, action[1])
 end
 
-function DRiL.act!(env::AcrobotEnv, action::Integer)
+function Drill.act!(env::AcrobotEnv, action::Integer)
     problem = env.problem
 
     # Map discrete action to torque
@@ -178,22 +178,22 @@ function DRiL.act!(env::AcrobotEnv, action::Integer)
     return reward(env)
 end
 
-function DRiL.observe(env::AcrobotEnv)
+function Drill.observe(env::AcrobotEnv)
     p = env.problem
     # Return [cos(θ1), sin(θ1), cos(θ2), sin(θ2), θ̇1, θ̇2]
     return [cos(p.theta1), sin(p.theta1), cos(p.theta2), sin(p.theta2), p.dtheta1, p.dtheta2]
 end
 
-function DRiL.terminated(env::AcrobotEnv)
+function Drill.terminated(env::AcrobotEnv)
     p = env.problem
     # Goal condition: -cos(θ1) - cos(θ2 + θ1) > 1.0
     return -cos(p.theta1) - cos(p.theta2 + p.theta1) > 1.0f0
 end
 
-DRiL.truncated(env::AcrobotEnv) = env.step >= env.max_steps
-DRiL.action_space(env::AcrobotEnv) = env.action_space
-DRiL.observation_space(env::AcrobotEnv) = env.observation_space
-DRiL.get_info(env::AcrobotEnv) = Dict{String, Any}(
+Drill.truncated(env::AcrobotEnv) = env.step >= env.max_steps
+Drill.action_space(env::AcrobotEnv) = env.action_space
+Drill.observation_space(env::AcrobotEnv) = env.observation_space
+Drill.get_info(env::AcrobotEnv) = Dict{String, Any}(
     "step" => env.step,
     "theta1" => env.problem.theta1,
     "theta2" => env.problem.theta2,

@@ -1,5 +1,5 @@
 using ClassicControlEnvironments
-using DRiL
+using Drill
 using WGLMakie
 using Zygote
 ## setup env, alg, policy and agent

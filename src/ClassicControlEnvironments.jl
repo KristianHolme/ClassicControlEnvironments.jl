@@ -1,6 +1,6 @@
 module ClassicControlEnvironments
 
-using DRiL
+using Drill
 using Random
 using Reexport
 

@@ -28,7 +28,7 @@ mutable struct PendulumEnv <: AbstractEnv
     end
 end
 
-function DRiL.reset!(env::PendulumEnv)
+function Drill.reset!(env::PendulumEnv)
     # Use the environment's internal RNG
     reset!(env.problem, env.rng)
     env.step = 0
@@ -53,11 +53,11 @@ function reward(env::PendulumEnv)
     return reward
 end
 
-function DRiL.act!(env::PendulumEnv, action::AbstractArray{Float32, 1})
-    return DRiL.act!(env, action[1])
+function Drill.act!(env::PendulumEnv, action::AbstractArray{Float32, 1})
+    return Drill.act!(env, action[1])
 end
 
-function DRiL.act!(env::PendulumEnv, action::Float32)
+function Drill.act!(env::PendulumEnv, action::Float32)
     pend = env.problem
     pend.torque = action
     g = pend.gravity
@@ -73,14 +73,14 @@ function DRiL.act!(env::PendulumEnv, action::Float32)
     return reward(env)
 end
 
-function DRiL.observe(env::PendulumEnv)
+function Drill.observe(env::PendulumEnv)
     x = cos(env.problem.theta)
     y = sin(env.problem.theta)
     return [x, y, env.problem.velocity]
 end
 
-DRiL.terminated(env::PendulumEnv) = false
-DRiL.truncated(env::PendulumEnv) = env.step >= env.max_steps
-DRiL.action_space(env::PendulumEnv) = env.action_space
-DRiL.observation_space(env::PendulumEnv) = env.observation_space
-DRiL.get_info(env::PendulumEnv) = Dict{String, Any}("step" => env.step)
+Drill.terminated(env::PendulumEnv) = false
+Drill.truncated(env::PendulumEnv) = env.step >= env.max_steps
+Drill.action_space(env::PendulumEnv) = env.action_space
+Drill.observation_space(env::PendulumEnv) = env.observation_space
+Drill.get_info(env::PendulumEnv) = Dict{String, Any}("step" => env.step)

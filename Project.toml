@@ -5,7 +5,7 @@ version = "0.0.1"
 
 
 [deps]
-DRiL = "49b37b9d-a8e6-4364-9144-4677bcb8a7f0"
+Drill = "49b37b9d-a8e6-4364-9144-4677bcb8a7f0"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
@@ -28,4 +28,4 @@ TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 test = ["Test", "TestItems"]
 
 [sources]
-DRiL = {url = "https://github.com/KristianHolme/DRiL.jl", rev = "main"}
+Drill = {url = "https://github.com/KristianHolme/Drill.jl", rev = "main"}

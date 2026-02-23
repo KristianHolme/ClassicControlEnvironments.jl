@@ -74,7 +74,7 @@ end
 
 # Common methods for all mountain car environments
 
-function DRiL.reset!(env::AbstractMountainCarEnv)
+function Drill.reset!(env::AbstractMountainCarEnv)
     # Use the environment's internal RNG
     reset!(env.problem, env.rng)
     return env.step = 0
@@ -132,11 +132,11 @@ function update_mountain_car_physics!(problem::MountainCarProblem, force::Float3
 end
 
 # Discrete MountainCarEnv action methods
-function DRiL.act!(env::MountainCarEnv, action::AbstractArray{Int, 1})
-    return DRiL.act!(env, action[1])
+function Drill.act!(env::MountainCarEnv, action::AbstractArray{Int, 1})
+    return Drill.act!(env, action[1])
 end
 
-function DRiL.act!(env::MountainCarEnv, action::Integer)
+function Drill.act!(env::MountainCarEnv, action::Integer)
     # Convert discrete action to force: 0 -> -1, 1 -> 0, 2 -> +1
     force = action == 0 ? -1.0f0 : (action == 1 ? 0.0f0 : 1.0f0)
 
@@ -146,11 +146,11 @@ function DRiL.act!(env::MountainCarEnv, action::Integer)
 end
 
 # Continuous MountainCarContinuousEnv action methods
-function DRiL.act!(env::MountainCarContinuousEnv, action::AbstractArray{Float32, 1})
-    return DRiL.act!(env, action[1])
+function Drill.act!(env::MountainCarContinuousEnv, action::AbstractArray{Float32, 1})
+    return Drill.act!(env, action[1])
 end
 
-function DRiL.act!(env::MountainCarContinuousEnv, action::Float32)
+function Drill.act!(env::MountainCarContinuousEnv, action::Float32)
     # Clamp action to valid range
     force = clamp(action, -1.0f0, 1.0f0)
 
@@ -160,17 +160,17 @@ function DRiL.act!(env::MountainCarContinuousEnv, action::Float32)
 end
 
 # Common interface methods
-function DRiL.observe(env::AbstractMountainCarEnv)
+function Drill.observe(env::AbstractMountainCarEnv)
     return [env.problem.position, env.problem.velocity]
 end
 
-function DRiL.terminated(env::AbstractMountainCarEnv)
+function Drill.terminated(env::AbstractMountainCarEnv)
     # Episode terminates when car reaches goal position with sufficient velocity
     return env.problem.position >= env.problem.goal_position &&
         env.problem.velocity >= env.problem.goal_velocity
 end
 
-DRiL.truncated(env::AbstractMountainCarEnv) = env.step >= env.max_steps
-DRiL.action_space(env::AbstractMountainCarEnv) = env.action_space
-DRiL.observation_space(env::AbstractMountainCarEnv) = env.observation_space
-DRiL.get_info(env::AbstractMountainCarEnv) = Dict{String, Any}("step" => env.step, "position" => env.problem.position, "velocity" => env.problem.velocity)
+Drill.truncated(env::AbstractMountainCarEnv) = env.step >= env.max_steps
+Drill.action_space(env::AbstractMountainCarEnv) = env.action_space
+Drill.observation_space(env::AbstractMountainCarEnv) = env.observation_space
+Drill.get_info(env::AbstractMountainCarEnv) = Dict{String, Any}("step" => env.step, "position" => env.problem.position, "velocity" => env.problem.velocity)
