@@ -340,6 +340,6 @@ end
 
     @test discrete_env isa AbstractMountainCarEnv
     @test continuous_env isa AbstractMountainCarEnv
-    @test discrete_env isa AbstractEnv
-    @test continuous_env isa AbstractEnv
+    @test discrete_env isa DrillInterface.AbstractEnv
+    @test continuous_env isa DrillInterface.AbstractEnv
 end

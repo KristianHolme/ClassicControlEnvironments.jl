@@ -8,7 +8,7 @@
     dt::Float32 = 0.05f0
 end
 
-mutable struct PendulumEnv <: AbstractEnv
+mutable struct PendulumEnv <: DrillInterface.AbstractEnv
     problem::PendulumProblem
     action_space::Box{Float32}
     observation_space::Box{Float32}

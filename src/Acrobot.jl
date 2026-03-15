@@ -28,7 +28,7 @@
     book_or_nips::String = "book"
 end
 
-mutable struct AcrobotEnv <: AbstractEnv
+mutable struct AcrobotEnv <: DrillInterface.AbstractEnv
     problem::AcrobotProblem
     action_space::Discrete
     observation_space::Box{Float32}

@@ -27,7 +27,7 @@
     sutton_barto_reward::Bool = false  # If true: 0 per step, -1 on termination; else +1 per step
 end
 
-mutable struct CartPoleEnv <: AbstractEnv
+mutable struct CartPoleEnv <: DrillInterface.AbstractEnv
     problem::CartPoleProblem
     action_space::Discrete
     observation_space::Box{Float32}

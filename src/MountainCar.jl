@@ -12,7 +12,7 @@
 end
 
 # Abstract base type for both mountain car environments
-abstract type AbstractMountainCarEnv <: AbstractEnv end
+abstract type AbstractMountainCarEnv <: DrillInterface.AbstractEnv end
 
 # Discrete Mountain Car Environment (0=left, 1=no force, 2=right)
 mutable struct MountainCarEnv <: AbstractMountainCarEnv

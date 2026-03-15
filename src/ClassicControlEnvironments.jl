@@ -10,7 +10,7 @@ include("Pendulum.jl")
 export PendulumEnv, PendulumProblem
 
 include("MountainCar.jl")
-export AbstractMountainCarEnv, MountainCarEnv, MountainCarContinuousEnv, MountainCarProblem
+export AbstractMountainCarEnv, MountainCarContinuousEnv, MountainCarEnv, MountainCarProblem
 
 include("CartPole.jl")
 export CartPoleEnv, CartPoleProblem
@@ -25,9 +25,7 @@ function plot_trajectory end
 function plot_trajectory_interactive end
 function animate_trajectory_video end
 function plot_trajectory_phase_space end
-export plot, live_viz, interactive_viz, plot_trajectory, plot_trajectory_interactive, animate_trajectory_video
-
-# Placeholder exports for future environments
-# export CartPoleEnv, MountainCarEnv, etc.
+export animate_trajectory_video, interactive_viz, live_viz, plot, plot_trajectory,
+    plot_trajectory_interactive
 
 end

@@ -15,7 +15,7 @@
     @test hasmethod(DrillInterface.get_info, (typeof(env),))
 
     # Test environment type hierarchy
-    @test env isa AbstractEnv
+    @test env isa DrillInterface.AbstractEnv
 end
 
 @testitem "Acrobot action space" begin
