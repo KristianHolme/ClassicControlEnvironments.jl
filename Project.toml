@@ -29,5 +29,5 @@ TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 test = ["Test", "TestItems"]
 
 [sources]
-DrillInterface = { url = "https://github.com/KristianHolme/Drill.jl", rev = "main", subdir = "DrillInterface" }
+DrillInterface = {path = "../Drill.jl/DrillInterface"}
 
