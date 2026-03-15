@@ -61,7 +61,7 @@ mutable struct CartPoleEnv <: AbstractEnv
     end
 end
 
-function Drill.reset!(env::CartPoleEnv)
+function DrillInterface.reset!(env::CartPoleEnv)
     reset!(env.problem, env.rng)
     env.step = 0
     return nothing
@@ -88,11 +88,11 @@ function reward(env::CartPoleEnv)
     end
 end
 
-function Drill.act!(env::CartPoleEnv, action::AbstractArray{Int, 1})
-    return Drill.act!(env, action[1])
+function DrillInterface.act!(env::CartPoleEnv, action::AbstractArray{Int, 1})
+    return DrillInterface.act!(env, action[1])
 end
 
-function Drill.act!(env::CartPoleEnv, action::Integer)
+function DrillInterface.act!(env::CartPoleEnv, action::Integer)
     problem = env.problem
 
     # Convert discrete action to force: 0 -> -force_mag, 1 -> +force_mag
@@ -128,19 +128,19 @@ function Drill.act!(env::CartPoleEnv, action::Integer)
     return reward(env)
 end
 
-function Drill.observe(env::CartPoleEnv)
+function DrillInterface.observe(env::CartPoleEnv)
     p = env.problem
     return [p.x, p.x_dot, p.theta, p.theta_dot]
 end
 
-function Drill.terminated(env::CartPoleEnv)
+function DrillInterface.terminated(env::CartPoleEnv)
     p = env.problem
     # Episode terminates if pole angle or cart position exceeds bounds
     return abs(p.theta) > p.theta_threshold_radians ||
         abs(p.x) > p.x_threshold
 end
 
-Drill.truncated(env::CartPoleEnv) = env.step >= env.max_steps
-Drill.action_space(env::CartPoleEnv) = env.action_space
-Drill.observation_space(env::CartPoleEnv) = env.observation_space
-Drill.get_info(env::CartPoleEnv) = Dict{String, Any}("step" => env.step, "x" => env.problem.x, "theta" => env.problem.theta)
+DrillInterface.truncated(env::CartPoleEnv) = env.step >= env.max_steps
+DrillInterface.action_space(env::CartPoleEnv) = env.action_space
+DrillInterface.observation_space(env::CartPoleEnv) = env.observation_space
+DrillInterface.get_info(env::CartPoleEnv) = Dict{String, Any}("step" => env.step, "x" => env.problem.x, "theta" => env.problem.theta)
