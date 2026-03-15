@@ -8,7 +8,7 @@ function _process_actions_for_plotting(actions::AbstractArray, env::ClassicContr
     end
 
     # Convert discrete actions to force values for visualization
-    if Drill.action_space(env) isa Drill.Discrete
+    if DrillInterface.action_space(env) isa DrillInterface.Discrete
         # Discrete actions: 0 -> -1, 1 -> 0, 2 -> 1
         force_actions = [Float32(action == 0 ? -1 : (action == 1 ? 0 : 1)) for action in flat_actions]
     else
@@ -192,7 +192,7 @@ function ClassicControlEnvironments.interactive_viz(env::ClassicControlEnvironme
     colsize!(fig.layout, 2, Relative(0.25))
 
     # Control slider - different setup for discrete vs continuous
-    is_discrete = Drill.action_space(env) isa Drill.Discrete
+    is_discrete = DrillInterface.action_space(env) isa DrillInterface.Discrete
     if is_discrete
         # Discrete: slider with 3 values corresponding to forces -1, 0, 1
         sg = SliderGrid(

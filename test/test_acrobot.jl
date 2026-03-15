@@ -1,25 +1,25 @@
 @testitem "Acrobot basic interface compliance" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
 
     # Test that all required methods exist
-    @test hasmethod(Drill.reset!, (typeof(env),))
-    @test hasmethod(Drill.act!, (typeof(env), Integer))
-    @test hasmethod(Drill.act!, (typeof(env), AbstractArray{Int, 1}))
-    @test hasmethod(Drill.observe, (typeof(env),))
-    @test hasmethod(Drill.terminated, (typeof(env),))
-    @test hasmethod(Drill.truncated, (typeof(env),))
-    @test hasmethod(Drill.action_space, (typeof(env),))
-    @test hasmethod(Drill.observation_space, (typeof(env),))
-    @test hasmethod(Drill.get_info, (typeof(env),))
+    @test hasmethod(DrillInterface.reset!, (typeof(env),))
+    @test hasmethod(DrillInterface.act!, (typeof(env), Integer))
+    @test hasmethod(DrillInterface.act!, (typeof(env), AbstractArray{Int, 1}))
+    @test hasmethod(DrillInterface.observe, (typeof(env),))
+    @test hasmethod(DrillInterface.terminated, (typeof(env),))
+    @test hasmethod(DrillInterface.truncated, (typeof(env),))
+    @test hasmethod(DrillInterface.action_space, (typeof(env),))
+    @test hasmethod(DrillInterface.observation_space, (typeof(env),))
+    @test hasmethod(DrillInterface.get_info, (typeof(env),))
 
     # Test environment type hierarchy
     @test env isa AbstractEnv
 end
 
 @testitem "Acrobot action space" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     act_space = action_space(env)
@@ -35,7 +35,7 @@ end
 end
 
 @testitem "Acrobot observation space" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     os = observation_space(env)
@@ -60,7 +60,7 @@ end
 end
 
 @testitem "Acrobot initial state and reset" begin
-    using Drill
+    using DrillInterface
     using Random
     rng = MersenneTwister(123)
     env = AcrobotEnv(rng = rng)
@@ -85,7 +85,7 @@ end
 end
 
 @testitem "Acrobot observation consistency" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     reset!(env)
@@ -119,7 +119,7 @@ end
 end
 
 @testitem "Acrobot action mapping" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     reset!(env)
@@ -140,7 +140,7 @@ end
 end
 
 @testitem "Acrobot array action input" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     reset!(env)
@@ -155,7 +155,7 @@ end
 end
 
 @testitem "Acrobot physics simulation" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     reset!(env)
@@ -179,7 +179,7 @@ end
 end
 
 @testitem "Acrobot angle wrapping" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     reset!(env)
@@ -197,7 +197,7 @@ end
 end
 
 @testitem "Acrobot velocity bounds" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     reset!(env)
@@ -215,7 +215,7 @@ end
 end
 
 @testitem "Acrobot reward structure" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     reset!(env)
@@ -242,7 +242,7 @@ end
 end
 
 @testitem "Acrobot goal condition" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     reset!(env)
@@ -269,7 +269,7 @@ end
 end
 
 @testitem "Acrobot step count and truncation" begin
-    using Drill
+    using DrillInterface
     using Random
     max_steps = 50
     env = AcrobotEnv(max_steps = max_steps)
@@ -292,7 +292,7 @@ end
 end
 
 @testitem "Acrobot dynamics variants" begin
-    using Drill
+    using DrillInterface
     using Random
     # Test both "book" and "nips" dynamics
     env_book = AcrobotEnv(book_or_nips = "book")
@@ -312,7 +312,7 @@ end
 end
 
 @testitem "Acrobot problem parameters" begin
-    using Drill
+    using DrillInterface
     using Random
     # Test custom parameters
     custom_env = AcrobotEnv(
@@ -334,7 +334,7 @@ end
 end
 
 @testitem "Acrobot get info" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv()
     reset!(env)
@@ -355,7 +355,7 @@ end
 end
 
 @testitem "Acrobot max step limit prevents infinite loops" begin
-    using Drill
+    using DrillInterface
     using Random
     # Test with a very small max_steps to ensure we hit the limit
     max_steps = 10
@@ -393,7 +393,7 @@ end
 end
 
 @testitem "Acrobot episode termination conditions" begin
-    using Drill
+    using DrillInterface
     using Random
     # Test that episodes can end either by goal or max steps
     max_steps = 20
@@ -419,7 +419,7 @@ end
 end
 
 @testitem "Acrobot long episode simulation" begin
-    using Drill
+    using DrillInterface
     using Random
     env = AcrobotEnv(max_steps = 100)
     reset!(env)

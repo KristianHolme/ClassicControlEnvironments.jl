@@ -1,5 +1,5 @@
 @testitem "MountainCar discrete observation range" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarEnv()
     reset!(env)
@@ -22,7 +22,7 @@
 end
 
 @testitem "MountainCar continuous observation range" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarContinuousEnv()
     reset!(env)
@@ -45,7 +45,7 @@ end
 end
 
 @testitem "MountainCar discrete initial state" begin
-    using Drill
+    using DrillInterface
     using Random
     rng = MersenneTwister(456)
     env = MountainCarEnv(rng = rng)
@@ -62,7 +62,7 @@ end
 end
 
 @testitem "MountainCar continuous initial state" begin
-    using Drill
+    using DrillInterface
     using Random
     rng = MersenneTwister(456)
     env = MountainCarContinuousEnv(rng = rng)
@@ -79,7 +79,7 @@ end
 end
 
 @testitem "MountainCar discrete physics simulation" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarEnv()
     reset!(env)
@@ -104,7 +104,7 @@ end
 end
 
 @testitem "MountainCar continuous physics simulation" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarContinuousEnv()
     reset!(env)
@@ -129,7 +129,7 @@ end
 end
 
 @testitem "MountainCar discrete goal condition" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarEnv()
     reset!(env)
@@ -150,7 +150,7 @@ end
 end
 
 @testitem "MountainCar continuous goal condition" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarContinuousEnv()
     reset!(env)
@@ -171,7 +171,7 @@ end
 end
 
 @testitem "MountainCar discrete reward structure" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarEnv()
     reset!(env)
@@ -182,7 +182,7 @@ end
 end
 
 @testitem "MountainCar continuous reward structure" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarContinuousEnv()
     reset!(env)
@@ -193,7 +193,7 @@ end
 end
 
 @testitem "MountainCar discrete step count and truncation" begin
-    using Drill
+    using DrillInterface
     using Random
     max_steps = 50
     env = MountainCarEnv(max_steps = max_steps)
@@ -214,7 +214,7 @@ end
 end
 
 @testitem "MountainCar continuous step count and truncation" begin
-    using Drill
+    using DrillInterface
     using Random
     max_steps = 50
     env = MountainCarContinuousEnv(max_steps = max_steps)
@@ -235,7 +235,7 @@ end
 end
 
 @testitem "MountainCar discrete action space" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarEnv()
     as = action_space(env)
@@ -249,7 +249,7 @@ end
 end
 
 @testitem "MountainCar discrete action mapping" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarEnv()
 
@@ -270,7 +270,7 @@ end
 end
 
 @testitem "MountainCar discrete array action input" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarEnv()
     reset!(env)
@@ -279,7 +279,7 @@ end
 end
 
 @testitem "MountainCar continuous action space" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarContinuousEnv()
     as = action_space(env)
@@ -289,7 +289,7 @@ end
 end
 
 @testitem "MountainCar continuous action clamping" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarContinuousEnv()
 
@@ -304,7 +304,7 @@ end
 end
 
 @testitem "MountainCar continuous array action input" begin
-    using Drill
+    using DrillInterface
     using Random
     env = MountainCarContinuousEnv()
     reset!(env)
@@ -313,7 +313,7 @@ end
 end
 
 @testitem "MountainCar common observation space" begin
-    using Drill
+    using DrillInterface
     using Random
     discrete_env = MountainCarEnv()
     continuous_env = MountainCarContinuousEnv()
@@ -333,7 +333,7 @@ end
 end
 
 @testitem "MountainCar type hierarchy" begin
-    using Drill
+    using DrillInterface
     using Random
     discrete_env = MountainCarEnv()
     continuous_env = MountainCarContinuousEnv()

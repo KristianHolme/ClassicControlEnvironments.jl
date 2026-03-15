@@ -1,5 +1,5 @@
 @testitem "Pendulum observation range" begin
-    using Drill
+    using DrillInterface
     using Random
     env = PendulumEnv()
 
@@ -21,7 +21,7 @@
 end
 
 @testitem "Pendulum zero action and gravity" begin
-    using Drill
+    using DrillInterface
     using Random
     # Create environment with zero gravity
     env = PendulumEnv(gravity = 0.0f0)
@@ -48,7 +48,7 @@ end
 end
 
 @testitem "Pendulum reward bounds" begin
-    using Drill
+    using DrillInterface
     using Random
     env = PendulumEnv()
 
@@ -83,7 +83,7 @@ end
 end
 
 @testitem "Pendulum step count and truncation" begin
-    using Drill
+    using DrillInterface
     using Random
     max_steps = 50
     env = PendulumEnv(max_steps = max_steps)
