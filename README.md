@@ -6,7 +6,7 @@ Classic control environments for Reinforcement Learning. All environments implem
 
 ## Interface
 
-Environments follow the API used by [Drill.jl](https://github.com/KristianHolme/Drill.jl), from the [DrillInterface.jl](https://github.com/KristianHolme/Drill.jl/tree/main/DrillInterface)
+Environments follow the [DrillInterface.jl](https://github.com/KristianHolme/Drill.jl/tree/main/DrillInterface) API used by [Drill.jl](https://github.com/KristianHolme/Drill.jl).
 
 ## Environments
 
