@@ -1,8 +1,7 @@
 name = "ClassicControlEnvironments"
 uuid = "a1069ede-d5f9-41a5-87b2-adf4ef867b86"
-authors = ["Kristian Holme <holme.kristian@gmail.com>"]
 version = "0.0.1"
-
+authors = ["Kristian Holme <holme.kristian@gmail.com>"]
 
 [deps]
 DrillInterface = "d92b6104-cdd8-4875-a041-bad43500bca7"
@@ -16,10 +15,10 @@ Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 ClassicControlEnvironmentsMakieExt = "Makie"
 
 [compat]
+DrillInterface = "0.1"
 Makie = "0.24"
 Reexport = "1"
 julia = "1.10"
-DrillInterface = "0.1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -27,6 +26,3 @@ TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 
 [targets]
 test = ["Test", "TestItems"]
-
-[sources]
-DrillInterface = { rev = "main", subdir = "DrillInterface", url = "https://github.com/KristianHolme/Drill.jl" }
