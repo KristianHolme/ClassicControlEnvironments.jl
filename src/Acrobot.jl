@@ -31,7 +31,7 @@ end
 mutable struct AcrobotEnv <: DrillInterface.AbstractEnv
     problem::AcrobotProblem
     action_space::Discrete
-    observation_space::Box{Float32}
+    observation_space::Box{Float32, 1}
     max_steps::Int
     step::Int
     rng::Random.AbstractRNG
@@ -56,7 +56,8 @@ mutable struct AcrobotEnv <: DrillInterface.AbstractEnv
     end
 end
 
-function DrillInterface.reset!(env::AcrobotEnv)
+function DrillInterface.reset!(env::AcrobotEnv; seed::Union{Nothing, Integer} = nothing)
+    isnothing(seed) || Random.seed!(env.rng, seed)
     reset!(env.problem, env.rng)
     env.step = 0
     return nothing
