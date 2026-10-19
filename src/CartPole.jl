@@ -30,7 +30,7 @@ end
 mutable struct CartPoleEnv <: DrillInterface.AbstractEnv
     problem::CartPoleProblem
     action_space::Discrete
-    observation_space::Box{Float32}
+    observation_space::Box{Float32, 1}
     max_steps::Int
     step::Int
     rng::Random.AbstractRNG
@@ -61,7 +61,8 @@ mutable struct CartPoleEnv <: DrillInterface.AbstractEnv
     end
 end
 
-function DrillInterface.reset!(env::CartPoleEnv)
+function DrillInterface.reset!(env::CartPoleEnv; seed::Union{Nothing, Integer} = nothing)
+    isnothing(seed) || Random.seed!(env.rng, seed)
     reset!(env.problem, env.rng)
     env.step = 0
     return nothing

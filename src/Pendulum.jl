@@ -10,8 +10,8 @@ end
 
 mutable struct PendulumEnv <: DrillInterface.AbstractEnv
     problem::PendulumProblem
-    action_space::Box{Float32}
-    observation_space::Box{Float32}
+    action_space::Box{Float32, 1}
+    observation_space::Box{Float32, 1}
     max_steps::Int
     step::Int
     rng::Random.AbstractRNG
@@ -28,7 +28,8 @@ mutable struct PendulumEnv <: DrillInterface.AbstractEnv
     end
 end
 
-function DrillInterface.reset!(env::PendulumEnv)
+function DrillInterface.reset!(env::PendulumEnv; seed::Union{Nothing, Integer} = nothing)
+    isnothing(seed) || Random.seed!(env.rng, seed)
     # Use the environment's internal RNG
     reset!(env.problem, env.rng)
     env.step = 0

@@ -18,7 +18,7 @@ abstract type AbstractMountainCarEnv <: DrillInterface.AbstractEnv end
 mutable struct MountainCarEnv <: AbstractMountainCarEnv
     problem::MountainCarProblem
     action_space::Discrete
-    observation_space::Box{Float32}
+    observation_space::Box{Float32, 1}
     max_steps::Int
     step::Int
     rng::Random.AbstractRNG
@@ -46,8 +46,8 @@ end
 # Continuous Mountain Car Environment (force in [-1, 1])
 mutable struct MountainCarContinuousEnv <: AbstractMountainCarEnv
     problem::MountainCarProblem
-    action_space::Box{Float32}
-    observation_space::Box{Float32}
+    action_space::Box{Float32, 1}
+    observation_space::Box{Float32, 1}
     max_steps::Int
     step::Int
     rng::Random.AbstractRNG
@@ -74,10 +74,12 @@ end
 
 # Common methods for all mountain car environments
 
-function DrillInterface.reset!(env::AbstractMountainCarEnv)
+function DrillInterface.reset!(env::AbstractMountainCarEnv; seed::Union{Nothing, Integer} = nothing)
+    isnothing(seed) || Random.seed!(env.rng, seed)
     # Use the environment's internal RNG
     reset!(env.problem, env.rng)
-    return env.step = 0
+    env.step = 0
+    return nothing
 end
 
 function reset!(problem::MountainCarProblem, rng::AbstractRNG)
